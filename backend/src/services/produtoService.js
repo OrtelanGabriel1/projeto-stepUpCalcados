@@ -2,7 +2,7 @@ const ProdutoRepository = require("../repositories/produtoRepository");
 
 class ProdutoService {
   async buscarTodosProduto() {
-    const produtos = ProdutoRepository.buscarTodos();
+    const produtos = await ProdutoRepository.buscarTodos();
     return {
       sucesso: true,
       dados: produtos,
