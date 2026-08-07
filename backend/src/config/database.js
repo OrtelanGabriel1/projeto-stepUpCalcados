@@ -1,7 +1,15 @@
-// 1. importar dotenv e "carregar" o .env
-// 2. importar o mysql2 (versão promise)
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-// 3. criar o pool de conexões, passando host, user, password, database, port
-//    (usando process.env.X pra cada valor)
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-// 4. exportar o pool pra ser usado em outros arquivos
+module.exports = pool;
