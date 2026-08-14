@@ -2,7 +2,11 @@ const funcionarioRepository = require('../repositories/funcionarioRepository');
 
 class FuncionarioService {
   async listar() {
-    return await funcionarioRepository.buscarTodos();
+    const funcionario = await funcionarioRepository.buscarTodos();
+    return {
+      sucesso:true,
+      dados:funcionario
+    };
   }
 
   async buscarPorId(id) {
@@ -10,7 +14,10 @@ class FuncionarioService {
     if (!funcionario) {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
-    return funcionario;
+    return {
+      sucesso:true,
+      dados:funcionario
+    };
   }
 
   async cadastrar(dados) {
@@ -19,33 +26,56 @@ class FuncionarioService {
     if (!nome || !email || !senha || !tipo_funcionario) {
       throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
     }
+    const novoFuncionario = { nome, email, senha, tipo_funcionario };
+    const funcionarioCriado = await funcionarioRepository.criar(novoFuncionario);
 
-    return await funcionarioRepository.criar({ nome, email, senha, tipo_funcionario });
-  }
+    return {
+      sucesso: true,
+      dados: funcionarioCriado
+    };
+}
 
   async atualizar(id, dados) {
-    await this.buscarPorId(id); // garante que existe, já lança 404 se não existir
+
+    if (!id || isNaN(id)) {
+      throw { status: 400, mensagem: "ID inválido" };
+    }
+
+    const existe = await funcionarioRepository.buscarPorId(id);
+    if (!existe) {
+      throw { status: 404, mensagem: "Funcionário não encontrado" };
+    }
 
     const { nome, email, senha, tipo_funcionario } = dados;
     if (!nome || !email || !senha || !tipo_funcionario) {
-      throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
+      throw { status: 400, mensagem: "Todos os campos são obrigatórios" };
     }
 
-    const atualizado = await funcionarioRepository.atualizar(id, { nome, email, senha, tipo_funcionario });
-    if (!atualizado) {
-      throw { status: 500, mensagem: 'Erro ao atualizar funcionário' };
-    }
-    return { id_funcionario: id, nome, email, tipo_funcionario };
-  }
+    await funcionarioRepository.atualizar(id, { nome, email, senha, tipo_funcionario });
 
-  async deletar(id) {
-    await this.buscarPorId(id);
-
-    const deletado = await funcionarioRepository.deletar(id);
-    if (!deletado) {
-      throw { status: 500, mensagem: 'Erro ao deletar funcionário' };
+    return {
+      sucesso: true,
+      mensagem: "Funcionário atualizado com sucesso",
     }
   }
-}
+
+
+
+async deletar(id) {
+    if (!id || isNaN(id)) {
+      throw { status: 400, mensagem: "ID inválido" };
+    }
+
+    const existe = await funcionarioRepository.buscarPorId(id);
+    if (!existe) {
+      throw { status: 404, mensagem: "Funcionário não encontrado" };
+    }
+
+    await funcionarioRepository.deletar(id);
+    return {
+      sucesso: true,
+      mensagem: "Funcionário deletado com sucesso",
+    }
+  }}
 
 module.exports = new FuncionarioService();
