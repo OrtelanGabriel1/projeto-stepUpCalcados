@@ -37,10 +37,10 @@ class FuncionarioController {
     }
   }
 
-  async deletar(req, res) {
+async deletar(req, res) {
     try {
-      await funcionarioService.deletar(req.params.id);
-      res.status(204).send();
+      const resultado = await funcionarioService.deletar(req.params.id);
+      res.status(200).json(resultado);
     } catch (erro) {
       res.status(erro.status || 500).json({ mensagem: erro.mensagem || 'Erro interno' });
     }
