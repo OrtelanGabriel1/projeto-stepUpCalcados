@@ -1,67 +1,49 @@
 const pool = require('../config/database');
 
-// Busca todos os produtos cadastrados
-async function buscarTodos() {
+class ProdutoRepository {
+  // Busca todos os produtos cadastrados
+  async buscarTodos() {
     const [rows] = await pool.query('SELECT * FROM produto');
     return rows;
-}
+  }
 
-// Busca um produto específico pelo id
-async function buscarPorId(id) {
-    const [rows] = await pool.query('SELECT * FROM produto WHERE id_produto = ?', [id]);
-    return rows[0]; // retorna só o objeto, não o array, já que é um único produto
-}
-
-// Cria um novo produto
-async function criar(produto) {
-    const [result] = await pool.query(
-        'INSERT INTO produto (nome, descricao, preco_venda, preco_custo, tamanho, cor, genero) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [
-            produto.nome,
-            produto.descricao,
-            produto.preco_venda,
-            produto.preco_custo,
-            produto.tamanho,
-            produto.cor,
-            produto.genero
-        ]
+  // Busca um produto específico pelo id
+  async buscarPorId(id) {
+    const [rows] = await pool.query(
+      'SELECT * FROM produto WHERE id_produto = ?',
+      [id]
     );
+    return rows[0];
+  }
 
-    return result.insertId;
-}
-
-async function atualizar(id, produto) {
+  // Cria um novo produto
+  async criar(produto) {
+    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero } = produto;
     const [result] = await pool.query(
-        'UPDATE produto SET nome = ?, descricao = ?, preco_venda = ?, preco_custo = ?, tamanho = ?, cor = ?, genero = ? WHERE id_produto = ?',
-        [
-            produto.nome,
-            produto.descricao,
-            produto.preco_venda,
-            produto.preco_custo,
-            produto.tamanho,
-            produto.cor,
-            produto.genero,
-            id
-        ]
+      'INSERT INTO produto (nome, descricao, preco_venda, preco_custo, tamanho, cor, genero) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nome, descricao, preco_venda, preco_custo, tamanho, cor, genero]
     );
+    return { id_produto: result.insertId, ...produto };
+  }
 
-    return result.affectedRows;
-}
-
-async function deletar(id) {
+  // Atualiza um produto existente
+  async atualizar(id, produto) {
+    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero } = produto;
     const [result] = await pool.query(
-        'DELETE FROM produto WHERE id_produto = ?',
-        [id]
+      'UPDATE produto SET nome = ?, descricao = ?, preco_venda = ?, preco_custo = ?, tamanho = ?, cor = ?, genero = ? WHERE id_produto = ?',
+      [nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id]
     );
+    return result.affectedRows > 0;
+  }
 
-    return result.affectedRows;
+  // Remove um produto pelo id
+  async deletar(id) {
+    const [result] = await pool.query(
+      'DELETE FROM produto WHERE id_produto = ?',
+      [id]
+    );
+    return result.affectedRows > 0;
+  }
 }
 
-module.exports = {
-    buscarTodos,
-    buscarPorId,
-    criar,
-    atualizar,
-    deletar
-    
-};
+module.exports = new ProdutoRepository();

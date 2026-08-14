@@ -8,8 +8,7 @@ async listar (req, res){
     } catch (erro) {
             res.status(erro.status || 500).json({
                 sucesso: false,
-                mensagem: erro.mensagem || "Erro interno do servidor",
-                erro: erro.stack || erro
+                mensagem: erro.mensagem || "Erro interno do servidor"
             });
         }
 }
@@ -22,7 +21,6 @@ async buscarPorId (req, res){
             res.status(erro.status || 500).json({
                 sucesso: false,
                 mensagem: erro.mensagem || "Erro interno do servidor",
-                erro: erro.stack || erro
             });
         }
 }
@@ -35,7 +33,6 @@ async cadastrar(req, res) {
         res.status(erro.status || 500).json({
             sucesso: false,
             mensagem: erro.mensagem || "Erro interno do servidor",
-            erro: erro.stack || erro
         });
     }
 }
@@ -48,7 +45,6 @@ async atualizar(req, res) {
         res.status(erro.status || 500).json({
             sucesso: false,
             mensagem: erro.mensagem || "Erro interno do servidor",
-            erro: erro.stack || erro
         });
     }
 }
@@ -61,7 +57,6 @@ async deletar(req, res) {
         res.status(erro.status || 500).json({
             sucesso: false,
             mensagem: erro.mensagem || "Erro interno do servidor",
-            erro: erro.stack || erro
         });
     }
 }
