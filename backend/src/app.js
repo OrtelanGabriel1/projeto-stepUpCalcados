@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-app.use(cors())
+app.use(cors());
 app.use(express.json());
 
 // Registro de todas as rotas da API centralizadas
@@ -11,5 +11,17 @@ app.use('/produto', produtoRoutes);
 
 const funcionarioRoutes = require('./routes/funcionarioRoutes');
 app.use('/funcionario', funcionarioRoutes);
+
+const categoriaRoutes = require('./routes/categoriaRoutes');
+app.use('/categoria', categoriaRoutes);
+
+const estoqueRoutes = require('./routes/estoqueRoutes');
+app.use('/estoque', estoqueRoutes);
+
+const historicoPrecoRoutes = require('./routes/historicoPrecoRoutes');
+app.use('/historico-preco', historicoPrecoRoutes);
+
+const vendaRoutes = require('./routes/vendaRoutes');
+app.use('/venda', vendaRoutes);
 
 module.exports = app;
