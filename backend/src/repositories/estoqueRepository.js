@@ -35,26 +35,26 @@ class EstoqueRepository {
       SELECT e.*, p.nome AS nome_produto, p.tamanho, p.cor
       FROM estoque e
       INNER JOIN produto p ON e.id_produto = p.id_produto
-      WHERE e.quantidade <= e.quantidade_minima
+      WHERE e.quantidade <= 5
       ORDER BY e.quantidade ASC
     `);
     return rows;
   }
 
   async criar(estoque) {
-    const { id_produto, quantidade, quantidade_minima } = estoque;
+    const { id_produto, quantidade } = estoque;
     const [result] = await pool.query(
-      'INSERT INTO estoque (id_produto, quantidade, quantidade_minima) VALUES (?, ?, ?)',
-      [id_produto, quantidade, quantidade_minima ?? 5]
+      'INSERT INTO estoque (id_produto, quantidade) VALUES (?, ?)',
+      [id_produto, quantidade]
     );
     return { id_estoque: result.insertId, ...estoque };
   }
 
   async atualizar(id, estoque) {
-    const { quantidade, quantidade_minima } = estoque;
+    const { quantidade } = estoque;
     const [result] = await pool.query(
-      'UPDATE estoque SET quantidade = ?, quantidade_minima = ? WHERE id_estoque = ?',
-      [quantidade, quantidade_minima, id]
+      'UPDATE estoque SET quantidade = ? WHERE id_estoque = ?',
+      [quantidade, id]
     );
     return result.affectedRows > 0;
   }

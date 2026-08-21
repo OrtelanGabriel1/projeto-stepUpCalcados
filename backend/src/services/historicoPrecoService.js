@@ -31,19 +31,13 @@ class HistoricoPrecoService {
   }
 
   async registrar(dados) {
-    const {
-      id_produto, preco_venda_ant, preco_custo_ant,
-      preco_venda_novo, preco_custo_novo, id_funcionario, motivo
-    } = dados;
+    const { id_produto, preco_anterior, preco_novo } = dados;
 
     if (!id_produto || isNaN(id_produto)) {
       throw { status: 400, mensagem: 'id_produto é obrigatório' };
     }
-    if (
-      preco_venda_ant === undefined || preco_custo_ant === undefined ||
-      preco_venda_novo === undefined || preco_custo_novo === undefined
-    ) {
-      throw { status: 400, mensagem: 'Todos os preços (ant/novo) são obrigatórios' };
+    if (preco_anterior === undefined || preco_novo === undefined) {
+      throw { status: 400, mensagem: 'Os preços anterior e novo são obrigatórios' };
     }
 
     const produto = await produtoRepository.buscarPorId(id_produto);
@@ -52,8 +46,7 @@ class HistoricoPrecoService {
     }
 
     const novo = await historicoPrecoRepository.criar({
-      id_produto, preco_venda_ant, preco_custo_ant,
-      preco_venda_novo, preco_custo_novo, id_funcionario, motivo
+      id_produto, preco_anterior, preco_novo
     });
     return { sucesso: true, mensagem: 'Histórico registrado com sucesso', dados: novo };
   }

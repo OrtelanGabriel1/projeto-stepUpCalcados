@@ -23,7 +23,7 @@ class VendaService {
   }
 
   async registrar(dados) {
-    const { id_funcionario, forma_pagamento, observacao, itens } = dados;
+    const { id_funcionario, forma_pagamento, itens } = dados;
 
     if (!forma_pagamento || !FORMAS_PAGAMENTO.includes(forma_pagamento)) {
       throw {
@@ -59,9 +59,9 @@ class VendaService {
         };
       }
 
-      const preco_unit = produto.preco_venda;
-      total += preco_unit * quantidade;
-      itensValidados.push({ id_produto, quantidade, preco_unit });
+      const preco_unitario = produto.preco_venda;
+      total += preco_unitario * quantidade;
+      itensValidados.push({ id_produto, quantidade, preco_unitario });
     }
 
     // Executa em transação
@@ -70,7 +70,7 @@ class VendaService {
       await connection.beginTransaction();
 
       const id_venda = await vendaRepository.criar(
-        { id_funcionario, forma_pagamento, observacao, total },
+        { id_funcionario, forma_pagamento, valor_total: total },
         connection
       );
 
@@ -104,9 +104,6 @@ class VendaService {
     if (!venda) {
       throw { status: 404, mensagem: 'Venda não encontrada' };
     }
-    if (venda.status === 'cancelada') {
-      throw { status: 409, mensagem: 'Venda já está cancelada' };
-    }
 
     const itens = await vendaRepository.buscarItensDaVenda(id);
 
@@ -122,7 +119,7 @@ class VendaService {
         );
       }
 
-      await vendaRepository.atualizarStatus(id, 'cancelada', connection);
+      await vendaRepository.deletar(id, connection);
       await connection.commit();
 
       return { sucesso: true, mensagem: 'Venda cancelada e estoque revertido' };

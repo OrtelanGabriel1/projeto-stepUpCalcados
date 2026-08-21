@@ -24,7 +24,7 @@ class EstoqueService {
   }
 
   async cadastrar(dados) {
-    const { id_produto, quantidade, quantidade_minima } = dados;
+    const { id_produto, quantidade } = dados;
 
     if (!id_produto || isNaN(id_produto)) {
       throw { status: 400, mensagem: 'id_produto é obrigatório e deve ser um número' };
@@ -43,7 +43,7 @@ class EstoqueService {
       throw { status: 409, mensagem: 'Já existe um registro de estoque para este produto. Use a atualização.' };
     }
 
-    const novo = await estoqueRepository.criar({ id_produto, quantidade, quantidade_minima });
+    const novo = await estoqueRepository.criar({ id_produto, quantidade });
     return { sucesso: true, mensagem: 'Estoque cadastrado com sucesso', dados: novo };
   }
 
@@ -56,15 +56,12 @@ class EstoqueService {
       throw { status: 404, mensagem: 'Registro de estoque não encontrado' };
     }
 
-    const { quantidade, quantidade_minima } = dados;
+    const { quantidade } = dados;
     if (quantidade === undefined || isNaN(quantidade) || quantidade < 0) {
       throw { status: 400, mensagem: 'Quantidade inválida' };
     }
 
-    await estoqueRepository.atualizar(id, {
-      quantidade,
-      quantidade_minima: quantidade_minima ?? existe.quantidade_minima
-    });
+    await estoqueRepository.atualizar(id, { quantidade });
     return { sucesso: true, mensagem: 'Estoque atualizado com sucesso' };
   }
 

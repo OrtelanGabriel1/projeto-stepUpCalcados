@@ -34,32 +34,33 @@ class VendaRepository {
   }
 
   async criar(venda, connection) {
-    const { id_funcionario, forma_pagamento, observacao, total } = venda;
+    const { id_funcionario, forma_pagamento, valor_total } = venda;
     const conn = connection || pool;
     const [result] = await conn.query(
-      `INSERT INTO venda (id_funcionario, forma_pagamento, observacao, total)
-       VALUES (?, ?, ?, ?)`,
-      [id_funcionario || null, forma_pagamento, observacao || null, total]
+      `INSERT INTO venda (id_funcionario, forma_pagamento, valor_total)
+       VALUES (?, ?, ?)`,
+      [id_funcionario, forma_pagamento, valor_total]
     );
     return result.insertId;
   }
 
   async inserirItem(id_venda, item, connection) {
-    const { id_produto, quantidade, preco_unit } = item;
+    const { id_produto, quantidade, preco_unitario } = item;
+    const subtotal = quantidade * preco_unitario;
     const conn = connection || pool;
     const [result] = await conn.query(
-      `INSERT INTO item_venda (id_venda, id_produto, quantidade, preco_unit)
-       VALUES (?, ?, ?, ?)`,
-      [id_venda, id_produto, quantidade, preco_unit]
+      `INSERT INTO item_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id_venda, id_produto, quantidade, preco_unitario, subtotal]
     );
     return result.insertId;
   }
 
-  async atualizarStatus(id, status, connection) {
+  async deletar(id, connection) {
     const conn = connection || pool;
     const [result] = await conn.query(
-      'UPDATE venda SET status = ? WHERE id_venda = ?',
-      [status, id]
+      'DELETE FROM venda WHERE id_venda = ?',
+      [id]
     );
     return result.affectedRows > 0;
   }

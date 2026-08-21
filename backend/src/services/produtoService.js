@@ -19,7 +19,7 @@ class ProdutoService {
   }
 
   async criarProduto(dados) {
-    let { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria, marca } = dados;
+    let { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria } = dados;
 
     if (!nome || !cor || preco_venda === undefined || preco_custo === undefined || tamanho === undefined) {
       throw {
@@ -34,7 +34,7 @@ class ProdutoService {
       throw { status: 400, mensagem: 'Preço deve ser um número positivo' };
     }
 
-    const novoProduto = { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria, marca };
+    const novoProduto = { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria };
     const id = await ProdutoRepository.criar(novoProduto);
 
     return { sucesso: true, mensagem: 'Produto cadastrado com sucesso', id };
@@ -50,20 +50,14 @@ class ProdutoService {
       throw { status: 404, mensagem: 'Produto não encontrado' };
     }
 
-    // Se preço mudou, registra histórico manualmente (além da trigger no banco)
-    const { preco_venda, preco_custo } = dados;
-    if (preco_venda !== undefined && preco_custo !== undefined) {
+    const { preco_venda } = dados;
+    if (preco_venda !== undefined) {
       const precoVendaMudou = Number(preco_venda) !== Number(existe.preco_venda);
-      const precoCustoMudou = Number(preco_custo) !== Number(existe.preco_custo);
-      if (precoVendaMudou || precoCustoMudou) {
+      if (precoVendaMudou) {
         await historicoPrecoRepository.criar({
           id_produto: id,
-          preco_venda_ant: existe.preco_venda,
-          preco_custo_ant: existe.preco_custo,
-          preco_venda_novo: preco_venda,
-          preco_custo_novo: preco_custo,
-          id_funcionario: dados.id_funcionario || null,
-          motivo: dados.motivo || null
+          preco_anterior: existe.preco_venda,
+          preco_novo: preco_venda
         });
       }
     }

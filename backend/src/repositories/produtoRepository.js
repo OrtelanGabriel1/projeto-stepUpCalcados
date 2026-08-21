@@ -6,7 +6,6 @@ class ProdutoRepository {
       SELECT p.*, c.nome AS nome_categoria
       FROM produto p
       LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
-      WHERE p.ativo = 1
       ORDER BY p.nome
     `);
     return rows;
@@ -24,31 +23,30 @@ class ProdutoRepository {
   }
 
   async criar(produto) {
-    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria, marca } = produto;
+    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria } = produto;
     const [result] = await pool.query(
-      `INSERT INTO produto (nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria, marca)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nome, descricao || null, preco_venda, preco_custo, tamanho, cor, genero || null, id_categoria || null, marca || null]
+      `INSERT INTO produto (nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nome, descricao || null, preco_venda, preco_custo, tamanho, cor, genero || null, id_categoria || null]
     );
     return { id_produto: result.insertId, ...produto };
   }
 
   async atualizar(id, produto) {
-    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria, marca } = produto;
+    const { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria } = produto;
     const [result] = await pool.query(
       `UPDATE produto
        SET nome = ?, descricao = ?, preco_venda = ?, preco_custo = ?,
-           tamanho = ?, cor = ?, genero = ?, id_categoria = ?, marca = ?
+           tamanho = ?, cor = ?, genero = ?, id_categoria = ?
        WHERE id_produto = ?`,
-      [nome, descricao || null, preco_venda, preco_custo, tamanho, cor, genero || null, id_categoria || null, marca || null, id]
+      [nome, descricao || null, preco_venda, preco_custo, tamanho, cor, genero || null, id_categoria || null, id]
     );
     return result.affectedRows > 0;
   }
 
   async deletar(id) {
-    // Soft delete - mantém histórico
     const [result] = await pool.query(
-      'UPDATE produto SET ativo = 0 WHERE id_produto = ?',
+      'DELETE FROM produto WHERE id_produto = ?',
       [id]
     );
     return result.affectedRows > 0;
