@@ -1,4 +1,3 @@
--- drop database stepupcalcados_db;
 CREATE DATABASE IF NOT EXISTS stepupcalcados_db;
 USE stepupcalcados_db;
 
@@ -11,14 +10,14 @@ CREATE TABLE IF NOT EXISTS funcionario (
     tipo_funcionario VARCHAR(100) NOT NULL
 );
 
--- 2. Tabela de Categorias (Nova entidade)
+-- 2. Tabela de Categorias
 CREATE TABLE IF NOT EXISTS categoria (
     id_categoria INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     descricao VARCHAR(200)
 );
 
--- 3. Tabela de Produtos (Atualizada com a FK de Categoria)
+-- 3. Tabela de Produtos (com a FK de Categoria)
 CREATE TABLE IF NOT EXISTS produto (
     id_produto INT AUTO_INCREMENT PRIMARY KEY,
     id_categoria INT,
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS produto (
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria) ON DELETE SET NULL
 );
 
--- 4. Tabela de Estoque (Nova entidade)
+-- 4. Tabela de Estoque
 CREATE TABLE IF NOT EXISTS estoque (
     id_estoque INT AUTO_INCREMENT PRIMARY KEY,
     id_produto INT NOT NULL,
@@ -41,7 +40,7 @@ CREATE TABLE IF NOT EXISTS estoque (
     FOREIGN KEY (id_produto) REFERENCES produto(id_produto) ON DELETE CASCADE
 );
 
--- 5. Tabela de Histórico de Preços (Nova entidade)
+-- 5. Tabela de Histórico de Preços
 CREATE TABLE IF NOT EXISTS historico_preco (
     id_historico INT AUTO_INCREMENT PRIMARY KEY,
     id_produto INT NOT NULL,
@@ -51,7 +50,7 @@ CREATE TABLE IF NOT EXISTS historico_preco (
     FOREIGN KEY (id_produto) REFERENCES produto(id_produto) ON DELETE CASCADE
 );
 
--- 6. Tabela de Vendas (Nova entidade)
+-- 6. Tabela de Vendas
 CREATE TABLE IF NOT EXISTS venda (
     id_venda INT AUTO_INCREMENT PRIMARY KEY,
     id_funcionario INT NOT NULL,
@@ -61,7 +60,7 @@ CREATE TABLE IF NOT EXISTS venda (
     FOREIGN KEY (id_funcionario) REFERENCES funcionario(id_funcionario)
 );
 
--- 7. Tabela de Itens da Venda (Relacionamento entre Venda e Produto)
+-- 7. Tabela de Itens da Venda
 CREATE TABLE IF NOT EXISTS item_venda (
     id_item_venda INT AUTO_INCREMENT PRIMARY KEY,
     id_venda INT NOT NULL,
@@ -72,19 +71,3 @@ CREATE TABLE IF NOT EXISTS item_venda (
     FOREIGN KEY (id_venda) REFERENCES venda(id_venda) ON DELETE CASCADE,
     FOREIGN KEY (id_produto) REFERENCES produto(id_produto)
 );
-id_funcionario INT auto_increment primary KEY,
-nome varchar(100) not null,
-email varchar (100)not null unique,
-senha varchar (100) not null,
-tipo_funcionario varchar (100) not null
-);
-
-create table if not exists produto(
-id_produto INT auto_increment primary KEY,
-nome varchar(100) not null,
-descricao varchar(200),
-preco_venda decimal(10,2) not null,
-preco_custo decimal(10,2) not null,
-tamanho int not null,
-cor varchar (100) not null,
-genero varchar (100));
