@@ -2,10 +2,6 @@
 CREATE DATABASE IF NOT EXISTS stepupcalcados_db;
 USE stepupcalcados_db;
 
-CREATE TABLE IF NOT EXISTS funcionario(-- drop database stepupcalcados_db;
-CREATE DATABASE IF NOT EXISTS stepupcalcados_db;
-USE stepupcalcados_db;
-
 -- 1. Tabela de Funcionários
 CREATE TABLE IF NOT EXISTS funcionario (
     id_funcionario INT AUTO_INCREMENT PRIMARY KEY,
