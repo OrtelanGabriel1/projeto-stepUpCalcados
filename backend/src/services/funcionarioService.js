@@ -1,11 +1,14 @@
+const bcrypt = require('bcryptjs');
 const funcionarioRepository = require('../repositories/funcionarioRepository');
+
+const SALT_ROUNDS = 10;
 
 class FuncionarioService {
   async listar() {
-    const funcionario = await funcionarioRepository.buscarTodos();
+    const funcionarios = await funcionarioRepository.buscarTodos();
     return {
       sucesso: true,
-      dados: funcionario
+      dados: funcionarios
     };
   }
 
@@ -26,7 +29,9 @@ class FuncionarioService {
     if (!nome || !email || !senha || !tipo_funcionario) {
       throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
     }
-    const novoFuncionario = { nome, email, senha, tipo_funcionario };
+
+    const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
+    const novoFuncionario = { nome, email, senha: senhaHash, tipo_funcionario };
     const funcionarioCriado = await funcionarioRepository.criar(novoFuncionario);
 
     return {
@@ -50,7 +55,8 @@ class FuncionarioService {
       throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
     }
 
-    await funcionarioRepository.atualizar(id, { nome, email, senha, tipo_funcionario });
+    const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
+    await funcionarioRepository.atualizar(id, { nome, email, senha: senhaHash, tipo_funcionario });
 
     return {
       sucesso: true,

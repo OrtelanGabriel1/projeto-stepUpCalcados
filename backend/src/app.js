@@ -1,22 +1,29 @@
 const express = require('express');
 const cors    = require('cors');
+require('dotenv').config();
+
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
+const { autenticar }             = require('./middlewares/authMiddleware');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Rotas existentes
-const produtoRoutes         = require('./routes/produtoRoutes');
-const funcionarioRoutes     = require('./routes/funcionarioRoutes');
-const categoriaRoutes       = require('./routes/categoriaRoutes');
-const estoqueRoutes         = require('./routes/estoqueRoutes');
-const historicoPrecoRoutes  = require('./routes/historicoPrecoRoutes');
-const vendaRoutes           = require('./routes/vendaRoutes');
+// Rota pública — não exige token
+const authRoutes = require('./routes/authRoutes');
+app.use('/auth', authRoutes);
 
-// Nova rota de movimentação de estoque
-const movimentacaoEstoqueRoutes = require('./routes/movimentacaoEstoqueRoutes');
+// Todas as rotas abaixo exigem token JWT válido
+app.use(autenticar);
+
+const produtoRoutes              = require('./routes/produtoRoutes');
+const funcionarioRoutes          = require('./routes/funcionarioRoutes');
+const categoriaRoutes            = require('./routes/categoriaRoutes');
+const estoqueRoutes              = require('./routes/estoqueRoutes');
+const historicoPrecoRoutes       = require('./routes/historicoPrecoRoutes');
+const vendaRoutes                = require('./routes/vendaRoutes');
+const movimentacaoEstoqueRoutes  = require('./routes/movimentacaoEstoqueRoutes');
 
 app.use('/produto',               produtoRoutes);
 app.use('/funcionario',           funcionarioRoutes);
