@@ -71,3 +71,73 @@ CREATE TABLE IF NOT EXISTS item_venda (
     FOREIGN KEY (id_venda) REFERENCES venda(id_venda) ON DELETE CASCADE,
     FOREIGN KEY (id_produto) REFERENCES produto(id_produto)
 );
+
+-- ============================================================
+--  MIGRAÇÃO: tabela movimentacao_estoque
+--  Execute após a criação das tabelas produto, estoque e
+--  funcionario já existentes no banco.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS movimentacao_estoque (
+  id_movimentacao   INT           NOT NULL AUTO_INCREMENT,
+  id_produto        INT           NOT NULL,
+  id_funcionario    INT               NULL,          -- NULL = sistema (venda automática)
+  tipo              ENUM('entrada','saida','ajuste') NOT NULL,
+  quantidade        INT           NOT NULL,           -- sempre positivo; tipo indica direção
+  motivo            VARCHAR(255)      NULL,
+  data_movimentacao DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id_movimentacao),
+  CONSTRAINT fk_mov_produto     FOREIGN KEY (id_produto)     REFERENCES produto(id_produto),
+  CONSTRAINT fk_mov_funcionario FOREIGN KEY (id_funcionario) REFERENCES funcionario(id_funcionario),
+  CONSTRAINT chk_quantidade     CHECK (quantidade > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Índices para consultas frequentes
+CREATE INDEX idx_mov_produto     ON movimentacao_estoque (id_produto);
+CREATE INDEX idx_mov_funcionario ON movimentacao_estoque (id_funcionario);
+CREATE INDEX idx_mov_data        ON movimentacao_estoque (data_movimentacao DESC);
+
+-- ============================================================
+--  TRIGGER: registra saída automática ao confirmar venda
+--  Dispara após cada linha inserida em item_venda.
+-- ============================================================
+
+DELIMITER $$
+
+CREATE TRIGGER trg_venda_saida_estoque
+AFTER INSERT ON item_venda
+FOR EACH ROW
+BEGIN
+  INSERT INTO movimentacao_estoque
+    (id_produto, id_funcionario, tipo, quantidade, motivo)
+  VALUES (
+    NEW.id_produto,
+    (SELECT id_funcionario FROM venda WHERE id_venda = NEW.id_venda),
+    'saida',
+    NEW.quantidade,
+    CONCAT('Venda #', NEW.id_venda)
+  );
+END$$
+
+-- ============================================================
+--  TRIGGER: registra entrada automática ao cancelar venda
+--  Dispara após cada linha removida de item_venda.
+-- ============================================================
+
+CREATE TRIGGER trg_venda_cancelamento_estoque
+AFTER DELETE ON item_venda
+FOR EACH ROW
+BEGIN
+  INSERT INTO movimentacao_estoque
+    (id_produto, id_funcionario, tipo, quantidade, motivo)
+  VALUES (
+    OLD.id_produto,
+    (SELECT id_funcionario FROM venda WHERE id_venda = OLD.id_venda),
+    'entrada',
+    OLD.quantidade,
+    CONCAT('Cancelamento da venda #', OLD.id_venda)
+  );
+END$$
+
+DELIMITER ;
