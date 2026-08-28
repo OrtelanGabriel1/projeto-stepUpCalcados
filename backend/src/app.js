@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
+
 const app = express();
 
 app.use(cors());
@@ -23,5 +25,9 @@ app.use('/historico-preco', historicoPrecoRoutes);
 
 const vendaRoutes = require('./routes/vendaRoutes');
 app.use('/venda', vendaRoutes);
+
+// Handlers globais — devem vir APÓS todas as rotas
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
