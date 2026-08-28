@@ -4,8 +4,8 @@ class FuncionarioService {
   async listar() {
     const funcionario = await funcionarioRepository.buscarTodos();
     return {
-      sucesso:true,
-      dados:funcionario
+      sucesso: true,
+      dados: funcionario
     };
   }
 
@@ -15,8 +15,8 @@ class FuncionarioService {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
     return {
-      sucesso:true,
-      dados:funcionario
+      sucesso: true,
+      dados: funcionario
     };
   }
 
@@ -33,49 +33,56 @@ class FuncionarioService {
       sucesso: true,
       dados: funcionarioCriado
     };
-}
+  }
 
   async atualizar(id, dados) {
-
     if (!id || isNaN(id)) {
-      throw { status: 400, mensagem: "ID inválido" };
+      throw { status: 400, mensagem: 'ID inválido' };
     }
 
     const existe = await funcionarioRepository.buscarPorId(id);
     if (!existe) {
-      throw { status: 404, mensagem: "Funcionário não encontrado" };
+      throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
 
     const { nome, email, senha, tipo_funcionario } = dados;
     if (!nome || !email || !senha || !tipo_funcionario) {
-      throw { status: 400, mensagem: "Todos os campos são obrigatórios" };
+      throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
     }
 
     await funcionarioRepository.atualizar(id, { nome, email, senha, tipo_funcionario });
 
     return {
       sucesso: true,
-      mensagem: "Funcionário atualizado com sucesso",
-    }
+      mensagem: 'Funcionário atualizado com sucesso'
+    };
   }
 
-
-
-async deletar(id) {
+  async deletar(id) {
     if (!id || isNaN(id)) {
-      throw { status: 400, mensagem: "ID inválido" };
+      throw { status: 400, mensagem: 'ID inválido' };
     }
 
     const existe = await funcionarioRepository.buscarPorId(id);
     if (!existe) {
-      throw { status: 404, mensagem: "Funcionário não encontrado" };
+      throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
 
-    await funcionarioRepository.deletar(id);
+    const temVendas = await funcionarioRepository.temVendas(id);
+    if (temVendas) {
+      throw {
+        status: 409,
+        mensagem: 'Não é possível excluir o funcionário pois ele possui vendas registradas. O funcionário foi desativado para preservar o histórico.',
+        acao: 'desativado'
+      };
+    }
+
+    await funcionarioRepository.desativar(id);
     return {
       sucesso: true,
-      mensagem: "Funcionário deletado com sucesso",
-    }
-  }}
+      mensagem: 'Funcionário desativado com sucesso'
+    };
+  }
+}
 
 module.exports = new FuncionarioService();

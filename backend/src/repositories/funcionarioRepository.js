@@ -2,13 +2,15 @@ const pool = require('../config/database');
 
 class FuncionarioRepository {
   async buscarTodos() {
-    const [rows] = await pool.query('SELECT * FROM funcionario');
+    const [rows] = await pool.query(
+      'SELECT * FROM funcionario WHERE ativo = true'
+    );
     return rows;
   }
 
   async buscarPorId(id) {
     const [rows] = await pool.query(
-      'SELECT * FROM funcionario WHERE id_funcionario = ?',
+      'SELECT * FROM funcionario WHERE id_funcionario = ? AND ativo = true',
       [id]
     );
     return rows[0];
@@ -26,18 +28,26 @@ class FuncionarioRepository {
   async atualizar(id, funcionario) {
     const { nome, email, senha, tipo_funcionario } = funcionario;
     const [result] = await pool.query(
-      'UPDATE funcionario SET nome = ?, email = ?, senha = ?, tipo_funcionario = ? WHERE id_funcionario = ?',
+      'UPDATE funcionario SET nome = ?, email = ?, senha = ?, tipo_funcionario = ? WHERE id_funcionario = ? AND ativo = true',
       [nome, email, senha, tipo_funcionario, id]
     );
     return result.affectedRows > 0;
   }
 
-  async deletar(id) {
+  async desativar(id) {
     const [result] = await pool.query(
-      'DELETE FROM funcionario WHERE id_funcionario = ?',
+      'UPDATE funcionario SET ativo = false WHERE id_funcionario = ?',
       [id]
     );
     return result.affectedRows > 0;
+  }
+
+  async temVendas(id) {
+    const [rows] = await pool.query(
+      'SELECT 1 FROM venda WHERE id_funcionario = ? LIMIT 1',
+      [id]
+    );
+    return rows.length > 0;
   }
 }
 

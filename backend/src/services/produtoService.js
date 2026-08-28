@@ -76,8 +76,25 @@ class ProdutoService {
       throw { status: 404, mensagem: 'Produto não encontrado' };
     }
 
-    await ProdutoRepository.deletar(id);
-    return { sucesso: true, mensagem: 'Produto deletado com sucesso' };
+    const temEstoque = await ProdutoRepository.temEstoque(id);
+    if (temEstoque) {
+      throw {
+        status: 409,
+        mensagem: 'Não é possível excluir o produto pois ele possui registros de estoque vinculados. Remova o estoque primeiro ou desative o produto.'
+      };
+    }
+
+    const temVendas = await ProdutoRepository.temVendas(id);
+    if (temVendas) {
+      throw {
+        status: 409,
+        mensagem: 'Não é possível excluir o produto pois ele possui vendas registradas. O produto foi desativado para preservar o histórico.',
+        acao: 'desativado'
+      };
+    }
+
+    await ProdutoRepository.desativar(id);
+    return { sucesso: true, mensagem: 'Produto desativado com sucesso' };
   }
 }
 
