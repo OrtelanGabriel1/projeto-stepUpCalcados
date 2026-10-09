@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS funcionario (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(100) NOT NULL,
-    tipo_funcionario VARCHAR(100) NOT NULL
+    tipo_funcionario VARCHAR(100) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT true
 );
 
 -- 2. Tabela de Categorias
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS produto (
     tamanho INT NOT NULL,
     cor VARCHAR(100) NOT NULL,
     genero VARCHAR(100),
+    ativo BOOLEAN NOT NULL DEFAULT true,
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria) ON DELETE SET NULL
 );
 
@@ -141,3 +143,25 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+/*
+-- ============================================================
+--  INSERTS DE TESTE (Referência futura - não executado)
+-- ============================================================
+
+INSERT INTO funcionario (nome, email, senha, tipo_funcionario, ativo) VALUES
+('Administrador', 'admin@stepup.com', '$2b$10$HASH_DA_SENHA_AQUI', 'gerente', true),
+('Vendedor Silva', 'vendedor@stepup.com', '$2b$10$HASH_DA_SENHA_AQUI', 'vendedor', true);
+
+INSERT INTO categoria (nome, descricao) VALUES
+('Esportivos', 'Tênis e calçados para prática de esportes'),
+('Casuais', 'Sapatos e tênis para uso no dia a dia');
+
+INSERT INTO produto (id_categoria, nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, ativo) VALUES
+(1, 'Tênis Corrida Pro', 'Tênis leve e amortecido', 299.90, 150.00, 41, 'Preto/Branco', 'Unissex', true),
+(2, 'Sapatênis Leather', 'Sapatênis de couro sintético', 189.90, 90.00, 40, 'Café', 'Masculino', true);
+
+INSERT INTO estoque (id_produto, quantidade) VALUES
+(1, 50),
+(2, 30);
+*/
