@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { createResourceService } from '../services/resourceService';
 import { useAuth } from '../context/AuthContext';
-import { formatarMoeda, formatarData, calcularVariacaoPercentual } from '../utils';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
@@ -12,7 +11,7 @@ const funcionarioService = createResourceService('funcionario');
 
 export default function Funcionarios() {
   const auth = useAuth();
-  const usuarioLogado = auth?.usuario || auth?.user;
+  const usuarioLogado = auth?.funcionario || auth?.usuario || auth?.user;
   const loggedUserId = usuarioLogado?.id_funcionario || usuarioLogado?.id;
 
   const [funcionarios, setFuncionarios] = useState([]);
@@ -31,27 +30,41 @@ export default function Funcionarios() {
   const [salvando, setSalvando] = useState(false);
   const [confirmarDelete, setConfirmarDelete] = useState(null);
 
-  const carregarFuncionarios = async () => {
+  const carregarFuncionarios = useCallback(async () => {
     setLoading(true);
     setErro(null);
+
     try {
-      const response = await funcionarioService.getAll();
-      const dados = Array.isArray(response) ? response : response.data || [];
+      const response = await funcionarioService.listar();
+
+      // O serviço retorna diretamente response.data do Axios.
+      // A API pode retornar um array diretamente ou dentro de "dados".
+      const dados = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.dados)
+          ? response.dados
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
+
       setFuncionarios(dados);
     } catch (err) {
+      console.error('Erro ao carregar funcionários:', err);
+
       const mensagemErro =
         err.response?.data?.mensagem ||
         err.response?.data?.erro ||
         'Erro ao carregar a lista de funcionários.';
+
       setErro(mensagemErro);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     carregarFuncionarios();
-  }, []);
+  }, [carregarFuncionarios]);
 
   const handleNovo = () => {
     setFuncionarioEditando(null);
@@ -88,21 +101,38 @@ export default function Funcionarios() {
   const handleSalvar = async (e) => {
     e.preventDefault();
     setSalvando(true);
+
     try {
       if (funcionarioEditando) {
-        await funcionarioService.update(funcionarioEditando.id_funcionario, form);
-        setToast({ mensagem: 'Funcionário atualizado com sucesso!', tipo: 'success' });
+        const id =
+          funcionarioEditando.id_funcionario ||
+          funcionarioEditando.id;
+
+        await funcionarioService.atualizar(id, form);
+
+        setToast({
+          mensagem: 'Funcionário atualizado com sucesso!',
+          tipo: 'success'
+        });
       } else {
-        await funcionarioService.create(form);
-        setToast({ mensagem: 'Funcionário cadastrado com sucesso!', tipo: 'success' });
+        await funcionarioService.criar(form);
+
+        setToast({
+          mensagem: 'Funcionário cadastrado com sucesso!',
+          tipo: 'success'
+        });
       }
+
       handleFecharModal();
-      carregarFuncionarios();
+      await carregarFuncionarios();
     } catch (err) {
+      console.error('Erro ao salvar funcionário:', err);
+
       const msgErro =
         err.response?.data?.mensagem ||
         err.response?.data?.erro ||
         'Erro ao salvar dados do funcionário.';
+
       setToast({ mensagem: msgErro, tipo: 'danger' });
     } finally {
       setSalvando(false);
@@ -111,16 +141,29 @@ export default function Funcionarios() {
 
   const handleDeletar = async () => {
     if (!confirmarDelete) return;
+
     try {
-      await funcionarioService.delete(confirmarDelete.id_funcionario);
-      setToast({ mensagem: 'Funcionário excluído com sucesso!', tipo: 'success' });
+      const id =
+        confirmarDelete.id_funcionario ||
+        confirmarDelete.id;
+
+      await funcionarioService.deletar(id);
+
+      setToast({
+        mensagem: 'Funcionário excluído com sucesso!',
+        tipo: 'success'
+      });
+
       setConfirmarDelete(null);
-      carregarFuncionarios();
+      await carregarFuncionarios();
     } catch (err) {
+      console.error('Erro ao excluir funcionário:', err);
+
       const msgErro =
         err.response?.data?.mensagem ||
         err.response?.data?.erro ||
         'Erro ao excluir funcionário.';
+
       setToast({ mensagem: msgErro, tipo: 'danger' });
       setConfirmarDelete(null);
     }
@@ -135,7 +178,11 @@ export default function Funcionarios() {
       case 'vendedor':
         return <span className="badge bg-primary">vendedor</span>;
       default:
-        return <span className="badge bg-secondary">{tipo || 'vendedor'}</span>;
+        return (
+          <span className="badge bg-secondary">
+            {tipo || 'vendedor'}
+          </span>
+        );
     }
   };
 
@@ -162,6 +209,13 @@ export default function Funcionarios() {
       {erro && (
         <div className="alert alert-danger" role="alert">
           {erro}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger ms-3"
+            onClick={carregarFuncionarios}
+          >
+            Tentar novamente
+          </button>
         </div>
       )}
 
@@ -176,20 +230,34 @@ export default function Funcionarios() {
                   <th scope="col">Email</th>
                   <th scope="col">Tipo</th>
                   <th scope="col">Status</th>
-                  <th scope="col" className="text-end" style={{ width: '180px' }}>Ações</th>
+                  <th
+                    scope="col"
+                    className="text-end"
+                    style={{ width: '180px' }}
+                  >
+                    Ações
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
                 {funcionarios.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-4 text-muted">
+                    <td
+                      colSpan="6"
+                      className="text-center py-4 text-muted"
+                    >
                       Nenhum funcionário cadastrado.
                     </td>
                   </tr>
                 ) : (
                   funcionarios.map((func, index) => {
-                    const idFunc = func.id_funcionario || func.id;
-                    const eProprioUsuario = idFunc === loggedUserId;
+                    const idFunc =
+                      func.id_funcionario || func.id;
+
+                    const eProprioUsuario =
+                      loggedUserId != null &&
+                      String(idFunc) === String(loggedUserId);
 
                     return (
                       <tr key={idFunc || index}>
@@ -200,7 +268,9 @@ export default function Funcionarios() {
                         <td>
                           <span
                             className={`badge ${
-                              func.status === 'Inativo' ? 'bg-secondary' : 'bg-success'
+                              String(func.status).toLowerCase() === 'inativo'
+                                ? 'bg-secondary'
+                                : 'bg-success'
                             }`}
                           >
                             {func.status || 'Ativo'}
@@ -208,7 +278,9 @@ export default function Funcionarios() {
                         </td>
                         <td className="text-end">
                           {eProprioUsuario ? (
-                            <span className="text-muted fw-normal">(você)</span>
+                            <span className="text-muted fw-normal">
+                              (você)
+                            </span>
                           ) : (
                             <div className="btn-group btn-group-sm">
                               <button
@@ -219,6 +291,7 @@ export default function Funcionarios() {
                               >
                                 Editar
                               </button>
+
                               <button
                                 type="button"
                                 className="btn btn-outline-danger"
@@ -240,10 +313,13 @@ export default function Funcionarios() {
         </div>
       </div>
 
-      {/* Modal Form */}
       <Modal
         id="modalFuncionario"
-        titulo={funcionarioEditando ? 'Editar Funcionário' : 'Novo Funcionário'}
+        titulo={
+          funcionarioEditando
+            ? 'Editar Funcionário'
+            : 'Novo Funcionário'
+        }
         aberto={modalAberto}
         onClose={handleFecharModal}
       >
@@ -307,10 +383,11 @@ export default function Funcionarios() {
               name="senha"
               value={form.senha}
               onChange={handleChange}
-              required
+              minLength={6}
+              required={!funcionarioEditando}
               placeholder={
                 funcionarioEditando
-                  ? 'Informe a senha atual ou nova senha'
+                  ? 'Preencha somente se desejar alterar a senha'
                   : 'Mínimo 6 caracteres'
               }
             />
@@ -325,6 +402,7 @@ export default function Funcionarios() {
             >
               Cancelar
             </button>
+
             <button
               type="submit"
               className="btn btn-primary"
@@ -336,7 +414,6 @@ export default function Funcionarios() {
         </form>
       </Modal>
 
-      {/* Modal Confirmação de Exclusão */}
       {confirmarDelete && (
         <Modal
           id="modalConfirmarDelete"
@@ -348,6 +425,7 @@ export default function Funcionarios() {
             Tem certeza de que deseja excluir o funcionário{' '}
             <strong>{confirmarDelete.nome}</strong>?
           </p>
+
           <div className="d-flex justify-content-end gap-2 mt-4">
             <button
               type="button"
@@ -356,6 +434,7 @@ export default function Funcionarios() {
             >
               Cancelar
             </button>
+
             <button
               type="button"
               className="btn btn-danger"
