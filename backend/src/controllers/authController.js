@@ -10,6 +10,15 @@ class AuthController {
       res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
     }
   }
+
+  async register(req, res) {
+    try {
+      const resultado = await authService.register(req.body);
+      res.status(201).json(resultado);
+    } catch (erro) {
+      res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
+    }
+  }
 }
 
 module.exports = new AuthController();

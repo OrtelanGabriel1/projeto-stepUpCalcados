@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const funcionarioRepository = require('../repositories/funcionarioRepository');
 
+const SALT_ROUNDS = 10;
+
 class AuthService {
   async login(email, senha) {
     if (!email || !senha) {
@@ -9,8 +11,6 @@ class AuthService {
     }
 
     const funcionario = await funcionarioRepository.buscarPorEmail(email);
-
-    // Mensagem genérica para não revelar se o email existe
     const errCredenciais = { status: 401, mensagem: 'Credenciais inválidas' };
 
     if (!funcionario) {
@@ -41,6 +41,33 @@ class AuthService {
         email: funcionario.email,
         tipo_funcionario: funcionario.tipo_funcionario,
       },
+    };
+  }
+
+  async register(dados) {
+    const { nome, email, senha, tipo_funcionario } = dados;
+
+    if (!nome || !email || !senha || !tipo_funcionario) {
+      throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
+    }
+
+    const jaExiste = await funcionarioRepository.buscarPorEmail(email);
+    if (jaExiste) {
+      throw { status: 400, mensagem: 'Já existe um funcionário registado com este e-mail' };
+    }
+
+    const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
+    const novoFuncionario = await funcionarioRepository.criar({
+      nome,
+      email,
+      senha: senhaHash,
+      tipo_funcionario,
+    });
+
+    return {
+      sucesso: true,
+      mensagem: 'Registo efetuado com sucesso',
+      dados: novoFuncionario,
     };
   }
 }

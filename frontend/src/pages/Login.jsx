@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -10,6 +10,8 @@ export default function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mensagemSucesso = location.state?.mensagemSucesso;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,6 +38,12 @@ export default function Login() {
         <div className="card-body p-4">
           <h5 className="card-title text-center mb-4">Entrar no sistema</h5>
 
+          {mensagemSucesso && (
+            <div className="alert alert-success" role="alert">
+              {mensagemSucesso}
+            </div>
+          )}
+
           {erro && (
             <div className="alert alert-danger" role="alert">
               {erro}
@@ -59,7 +67,7 @@ export default function Login() {
 
             <div className="mb-3">
               <label htmlFor="senha" className="form-label">
-                Senha
+                Palavra-passe
               </label>
               <input
                 type="password"
@@ -90,6 +98,14 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* NOVO BOTÃO / LINK PARA REGISTO */}
+          <div className="text-center mt-3 pt-2 border-top">
+            <small className="d-block text-muted mb-2">Ainda não tem conta?</small>
+            <Link to="/register" className="btn btn-outline-secondary btn-sm w-100">
+              Criar nova conta
+            </Link>
+          </div>
         </div>
         <div className="card-footer bg-transparent text-muted text-center small py-3">
           StepUp Calçados © 2024

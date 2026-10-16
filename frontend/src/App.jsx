@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
+import Register from "./pages/Register"; // Novo import
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
 import Estoque from "./pages/Estoque";
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} /> {/* Nova rota */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
