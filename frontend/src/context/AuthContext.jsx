@@ -31,21 +31,23 @@ export default function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = async (email, senha) => {
-    const resultado = await authService.login(email, senha);
+ 
+const login = async (email, senha) => {
+  const resultado = await authService.login(email, senha);
 
-    if (resultado && resultado.sucesso) {
-      const { token: novoToken, funcionario: novoFuncionario } = resultado.dados;
+  if (resultado && resultado.sucesso) {
+    const { token: novoToken, funcionario: novoFuncionario } = resultado;
 
-      localStorage.setItem('token', novoToken);
-      localStorage.setItem('funcionario', JSON.stringify(novoFuncionario));
+    localStorage.setItem('token', novoToken);
+    localStorage.setItem('funcionario', JSON.stringify(novoFuncionario));
 
-      setToken(novoToken);
-      setFuncionario(novoFuncionario);
-    }
+    setToken(novoToken);
+    setFuncionario(novoFuncionario);
+  }
 
-    return resultado;
-  };
+  return resultado;
+};
+
 
   const logout = () => {
     localStorage.removeItem('token');
