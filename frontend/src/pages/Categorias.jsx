@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { createResourceService } from '../services/resourceService';
-import Loading from '../components/Loading';
-import Toast from '../components/Toast';
-import Modal from '../components/Modal';
-import PageHeader from '../components/PageHeader';
-import EmptyState from '../components/EmptyState';
+import React, { useState, useEffect } from "react";
+import { createResourceService } from "../services/resourceService";
+import Loading from "../components/Loading";
+import Toast from "../components/Toast";
+import Modal from "../components/Modal";
+import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
 
-const categoriaService = createResourceService('categoria');
+const categoriaService = createResourceService("categoria");
 
 export default function Categorias() {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
-  const [toast, setToast] = useState({ mensagem: '', tipo: '' });
+  const [toast, setToast] = useState({ mensagem: "", tipo: "" });
 
   const [modalAberto, setModalAberto] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState(null);
-  const [form, setForm] = useState({ nome: '', descricao: '' });
+  const [form, setForm] = useState({ nome: "", descricao: "" });
   const [salvando, setSalvando] = useState(false);
 
   const [confirmarDelete, setConfirmarDelete] = useState(null);
@@ -30,10 +30,10 @@ export default function Categorias() {
     setErro(null);
     try {
       const res = await categoriaService.listar();
-      setCategorias(res.data || res || []);
+      setCategorias(res.dados || []);
     } catch (err) {
       setErro(
-        err.response?.data?.mensagem || 'Erro ao carregar lista de categorias'
+        err.response?.data?.mensagem || "Erro ao carregar lista de categorias",
       );
     } finally {
       setLoading(false);
@@ -42,15 +42,15 @@ export default function Categorias() {
 
   const handleAbrirNovoModal = () => {
     setCategoriaEditando(null);
-    setForm({ nome: '', descricao: '' });
+    setForm({ nome: "", descricao: "" });
     setModalAberto(true);
   };
 
   const handleAbrirEditarModal = (categoria) => {
     setCategoriaEditando(categoria);
     setForm({
-      nome: categoria.nome || '',
-      descricao: categoria.descricao || ''
+      nome: categoria.nome || "",
+      descricao: categoria.descricao || "",
     });
     setModalAberto(true);
   };
@@ -63,22 +63,22 @@ export default function Categorias() {
       if (categoriaEditando) {
         await categoriaService.atualizar(categoriaEditando.id, form);
         setToast({
-          mensagem: 'Categoria atualizada com sucesso!',
-          tipo: 'success'
+          mensagem: "Categoria atualizada com sucesso!",
+          tipo: "success",
         });
       } else {
         await categoriaService.criar(form);
         setToast({
-          mensagem: 'Categoria criada com sucesso!',
-          tipo: 'success'
+          mensagem: "Categoria criada com sucesso!",
+          tipo: "success",
         });
       }
       setModalAberto(false);
       carregarCategorias();
     } catch (err) {
       setToast({
-        mensagem: err.response?.data?.mensagem || 'Erro ao salvar categoria',
-        tipo: 'danger'
+        mensagem: err.response?.data?.mensagem || "Erro ao salvar categoria",
+        tipo: "danger",
       });
     } finally {
       setSalvando(false);
@@ -91,8 +91,8 @@ export default function Categorias() {
     try {
       await categoriaService.deletar(confirmarDelete.id);
       setToast({
-        mensagem: 'Categoria excluída com sucesso!',
-        tipo: 'success'
+        mensagem: "Categoria excluída com sucesso!",
+        tipo: "success",
       });
       setConfirmarDelete(null);
       carregarCategorias();
@@ -100,8 +100,8 @@ export default function Categorias() {
       setToast({
         mensagem:
           err.response?.data?.mensagem ||
-          'Erro ao excluir categoria (pode estar vinculada a outros registros)',
-        tipo: 'danger'
+          "Erro ao excluir categoria (pode estar vinculada a outros registros)",
+        tipo: "danger",
       });
     }
   };
@@ -116,7 +116,7 @@ export default function Categorias() {
         <Toast
           mensagem={toast.mensagem}
           tipo={toast.tipo}
-          onClose={() => setToast({ mensagem: '', tipo: '' })}
+          onClose={() => setToast({ mensagem: "", tipo: "" })}
         />
       )}
 
@@ -150,7 +150,7 @@ export default function Categorias() {
                     <tr key={item.id || index}>
                       <td>{item.id || index + 1}</td>
                       <td>{item.nome}</td>
-                      <td>{item.descricao || '-'}</td>
+                      <td>{item.descricao || "-"}</td>
                       <td className="text-end">
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
@@ -182,7 +182,8 @@ export default function Categorias() {
 
       {modalAberto && (
         <Modal
-          titulo={categoriaEditando ? 'Editar Categoria' : 'Nova Categoria'}
+          show={modalAberto}
+          titulo={categoriaEditando ? "Editar Categoria" : "Nova Categoria"}
           onClose={() => setModalAberto(false)}
         >
           <form onSubmit={handleSalvar}>
@@ -226,7 +227,7 @@ export default function Categorias() {
                 className="btn btn-primary"
                 disabled={salvando}
               >
-                {salvando ? 'Salvando...' : 'Salvar'}
+                {salvando ? "Salvando..." : "Salvar"}
               </button>
             </div>
           </form>
