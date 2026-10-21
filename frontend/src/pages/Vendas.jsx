@@ -11,8 +11,14 @@ import PageHeader from '../components/PageHeader'
 const vendaService = createResourceService('venda')
 const produtoService = createResourceService('produto')
 
+// Cargos que podem registrar vendas (todos os demais apenas visualizam)
+const CARGOS_PODEM_VENDER = ['vendedor', 'gerente']
+
 export default function Vendas() {
   const { funcionario } = useAuth()
+  const podeRegistrarVenda = CARGOS_PODEM_VENDER.includes(
+    String(funcionario?.tipo_funcionario || '').toLowerCase()
+  )
 
   const [vendas, setVendas] = useState([])
   const [produtos, setProdutos] = useState([])
@@ -68,6 +74,10 @@ export default function Vendas() {
   }, [])
 
   const abrirModalNovaVenda = () => {
+    if (!podeRegistrarVenda) {
+      setToast({ mensagem: 'Apenas vendedores e gerentes podem registrar vendas.', tipo: 'danger' })
+      return
+    }
     setForm({
       id_funcionario: funcionario?.id_funcionario || '',
       forma_pagamento: '',
@@ -83,7 +93,7 @@ export default function Vendas() {
 
   const handleAdicionarItem = () => {
     if (!itemAtual.id_produto || Number(itemAtual.quantidade) <= 0) {
-      setToast({ mensagem: 'Selecione um produto e uma quantidade válida.', tipo: 'erro' })
+      setToast({ mensagem: 'Selecione um produto e uma quantidade válida.', tipo: 'danger' })
       return
     }
 
@@ -92,7 +102,7 @@ export default function Vendas() {
     )
 
     if (!produtoEncontrado) {
-      setToast({ mensagem: 'Produto não encontrado.', tipo: 'erro' })
+      setToast({ mensagem: 'Produto não encontrado.', tipo: 'danger' })
       return
     }
 
@@ -145,12 +155,12 @@ export default function Vendas() {
     e.preventDefault()
 
     if (!form.forma_pagamento) {
-      setToast({ mensagem: 'Selecione a forma de pagamento.', tipo: 'erro' })
+      setToast({ mensagem: 'Selecione a forma de pagamento.', tipo: 'danger' })
       return
     }
 
     if (form.itens.length === 0) {
-      setToast({ mensagem: 'Adicione pelo menos 1 item à venda.', tipo: 'erro' })
+      setToast({ mensagem: 'Adicione pelo menos 1 item à venda.', tipo: 'danger' })
       return
     }
 
@@ -158,7 +168,6 @@ export default function Vendas() {
 
     try {
       const payload = {
-        id_funcionario: form.id_funcionario ? Number(form.id_funcionario) : null,
         forma_pagamento: form.forma_pagamento,
         itens: form.itens.map((item) => ({
           id_produto: Number(item.id_produto),
@@ -169,12 +178,12 @@ export default function Vendas() {
       const res = await vendaService.criar(payload)
       const msgSucesso = res.data?.mensagem || res.mensagem || 'Venda registrada com sucesso!'
 
-      setToast({ mensagem: msgSucesso, tipo: 'sucesso' })
+      setToast({ mensagem: msgSucesso, tipo: 'success' })
       fecharModalNovaVenda()
       carregarDados()
     } catch (err) {
       const msgErro = err.response?.data?.mensagem || err.message || 'Erro ao registrar venda.'
-      setToast({ mensagem: msgErro, tipo: 'erro' })
+      setToast({ mensagem: msgErro, tipo: 'danger' })
     } finally {
       setSalvando(false)
     }
@@ -188,7 +197,7 @@ export default function Vendas() {
       setModalDetalhes(dados)
     } catch (err) {
       const msgErro = err.response?.data?.mensagem || err.message || 'Erro ao carregar detalhes da venda.'
-      setToast({ mensagem: msgErro, tipo: 'erro' })
+      setToast({ mensagem: msgErro, tipo: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -203,12 +212,12 @@ export default function Vendas() {
       const res = await api.patch(`/venda/${id}/cancelar`)
       const msgSucesso = res.data?.mensagem || res.mensagem || 'Venda cancelada com sucesso!'
 
-      setToast({ mensagem: msgSucesso, tipo: 'sucesso' })
+      setToast({ mensagem: msgSucesso, tipo: 'success' })
       setConfirmarCancelar(null)
       carregarDados()
     } catch (err) {
       const msgErro = err.response?.data?.mensagem || err.message || 'Erro ao cancelar venda.'
-      setToast({ mensagem: msgErro, tipo: 'erro' })
+      setToast({ mensagem: msgErro, tipo: 'danger' })
     } finally {
       setSalvando(false)
     }
@@ -245,12 +254,13 @@ export default function Vendas() {
       <PageHeader
         titulo="Vendas"
         subtitulo="Registre e gerencie as vendas da loja"
-        acao={
-          <button className="btn btn-success d-flex align-items-center gap-2" onClick={abrirModalNovaVenda}>
-            <i className="bi bi-plus-lg"></i> + Nova Venda
+      >
+        {podeRegistrarVenda && (
+          <button className="btn btn-primary shadow-sm" onClick={abrirModalNovaVenda}>
+            <i className="bi bi-plus-lg me-1"></i> Nova Venda
           </button>
-        }
-      />
+        )}
+      </PageHeader>
 
       {erro && (
         <div className="alert alert-danger alert-dismissible fade show" role="alert">
@@ -326,9 +336,9 @@ export default function Vendas() {
       {modalNovaVenda && (
         <Modal
           titulo="Registrar Nova Venda"
-          aberto={modalNovaVenda}
-          aoFechar={fecharModalNovaVenda}
+          show={modalNovaVenda}
           onClose={fecharModalNovaVenda}
+          largura="720px"
         >
           <form onSubmit={handleRegistrarVenda}>
             <div className="mb-4">
@@ -469,8 +479,7 @@ export default function Vendas() {
       {modalDetalhes && (
         <Modal
           titulo={`Detalhes da Venda #${modalDetalhes.id_venda || modalDetalhes.id}`}
-          aberto={!!modalDetalhes}
-          aoFechar={() => setModalDetalhes(null)}
+          show={!!modalDetalhes}
           onClose={() => setModalDetalhes(null)}
         >
           <div className="mb-3">
@@ -541,12 +550,8 @@ export default function Vendas() {
       {confirmarCancelar && (
         <Modal
           titulo="Confirmar Cancelamento"
-          aberto={!!confirmarCancelar}
-          aoFechar={() => setConfirmarCancelar(null)}
+          show={!!confirmarCancelar}
           onClose={() => setConfirmarCancelar(null)}
-          tipoBotao="danger"
-          textoBotao="Cancelar Venda"
-          aoConfirmar={handleConfirmarCancelar}
         >
           <p className="mb-3">
             Cancelar a venda #{confirmarCancelar.id_venda || confirmarCancelar.id}? O estoque será revertido automaticamente.

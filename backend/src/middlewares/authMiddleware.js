@@ -22,4 +22,21 @@ const autenticar = (req, res, next) => {
   }
 };
 
-module.exports = { autenticar };
+
+const autorizar = (...tiposPermitidos) => {
+  const permitidos = tiposPermitidos.map((t) => t.toLowerCase());
+
+  return (req, res, next) => {
+    const tipo = String(req.funcionario?.tipo || '').toLowerCase();
+
+    if (!permitidos.includes(tipo)) {
+      return res.status(403).json({
+        sucesso: false,
+        mensagem: 'Acesso negado. Apenas vendedores e gerentes podem realizar esta ação',
+      });
+    }
+    next();
+  };
+};
+
+module.exports = { autenticar, autorizar };

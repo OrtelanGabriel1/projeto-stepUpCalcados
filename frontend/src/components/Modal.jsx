@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const Modal = ({
@@ -10,6 +9,7 @@ const Modal = ({
   textoBotao = 'Salvar',
   tipoBotao = 'primary',
   carregando = false,
+  largura = '520px',
 }) => {
   if (!show) {
     return null;
@@ -56,7 +56,7 @@ const Modal = ({
           style={{
             pointerEvents: 'auto',
             width: '100%',
-            maxWidth: '520px',
+            maxWidth: largura,
             margin: '0 1rem',
           }}
         >
