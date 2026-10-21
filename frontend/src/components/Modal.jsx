@@ -1,4 +1,4 @@
-// frontend/src/components/Modal.jsx
+
 import React from 'react';
 
 const Modal = ({
@@ -64,6 +64,7 @@ const Modal = ({
             {/* Cabeçalho */}
             <div className="modal-header">
               <h5 className="modal-title">{titulo}</h5>
+
               <button
                 type="button"
                 className="btn-close"
@@ -74,38 +75,10 @@ const Modal = ({
             </div>
 
             {/* Corpo */}
-            <div className="modal-body">{children}</div>
-
-            {/* Rodapé */}
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-                disabled={carregando}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className={`btn btn-${tipoBotao}`}
-                onClick={onConfirmar}
-                disabled={carregando}
-              >
-                {carregando ? (
-                  <>
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true"
-                    />
-                    Salvando...
-                  </>
-                ) : (
-                  textoBotao
-                )}
-              </button>
+            <div className="modal-body">
+              {children}
             </div>
+
           </div>
         </div>
       </div>
