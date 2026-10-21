@@ -1,3 +1,4 @@
+
 // frontend/src/components/Layout.jsx
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -5,6 +6,13 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const { funcionario, logout } = useAuth();
+
+  // Verifica se o funcionário conectado é gerente
+  const tipoFuncionario = String(
+    funcionario?.tipo || funcionario?.tipo_funcionario || ""
+  ).toLowerCase();
+
+  const ehGerente = tipoFuncionario === "gerente";
 
   const getNavLinkClass = ({ isActive }) =>
     `nav-link${isActive ? " active" : ""}`;
@@ -24,24 +32,34 @@ export default function Layout() {
           <NavLink to="/" end className={getNavLinkClass}>
             <i className="bi bi-house-door"></i> Dashboard
           </NavLink>
+
           <NavLink to="/produtos" className={getNavLinkClass}>
             <i className="bi bi-box-seam"></i> Produtos
           </NavLink>
+
           <NavLink to="/estoque" className={getNavLinkClass}>
             <i className="bi bi-archive"></i> Estoque
           </NavLink>
+
           <NavLink to="/vendas" className={getNavLinkClass}>
             <i className="bi bi-cart3"></i> Vendas
           </NavLink>
+
           <NavLink to="/movimentacoes" className={getNavLinkClass}>
             <i className="bi bi-arrow-left-right"></i> Movimentações
           </NavLink>
+
           <NavLink to="/categorias" className={getNavLinkClass}>
             <i className="bi bi-tag"></i> Categorias
           </NavLink>
-          <NavLink to="/funcionarios" className={getNavLinkClass}>
-            <i className="bi bi-people"></i> Funcionários
-          </NavLink>
+
+          {/* Funcionários: somente gerentes podem visualizar */}
+          {ehGerente && (
+            <NavLink to="/funcionarios" className={getNavLinkClass}>
+              <i className="bi bi-people"></i> Funcionários
+            </NavLink>
+          )}
+
           <NavLink to="/historico-precos" className={getNavLinkClass}>
             <i className="bi bi-graph-up"></i> Histórico de Preços
           </NavLink>
@@ -62,6 +80,7 @@ export default function Layout() {
               {funcionario?.email || ""}
             </small>
           </div>
+
           <button
             onClick={logout}
             className="btn btn-sm btn-outline-danger mt-2 w-100"
