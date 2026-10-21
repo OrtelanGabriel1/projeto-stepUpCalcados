@@ -303,18 +303,20 @@ export default function Estoque() {
                           <td className="text-muted small">{formatarData(dataAtualizacao)}</td>
                           <td className="text-center">
                             <button
-                              className="btn btn-sm btn-outline-primary me-1"
-                              title="Editar Quantidade"
+                              type="button"
+                              className="btn btn-outline-info me-2"
+                              title="Editar quantidade"
                               onClick={() => handleAbrirModalEdicao(item)}
                             >
-                              <i className="bi bi-pencil-fill"></i>
+                              Editar
                             </button>
                             <button
-                              className="btn btn-sm btn-outline-danger"
-                              title="Excluir Registro"
+                              type="button"
+                              className="btn btn-outline-danger"
+                              title="Excluir registro"
                               onClick={() => setConfirmarDelete(item)}
                             >
-                              <i className="bi bi-trash-fill"></i>
+                              Excluir
                             </button>
                           </td>
                         </tr>

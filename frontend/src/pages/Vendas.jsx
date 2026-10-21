@@ -305,24 +305,26 @@ export default function Vendas() {
                       <td>{renderBadgeFormaPagamento(venda.forma_pagamento)}</td>
                       <td className="fw-bold">{formatarMoeda(venda.valor_total || venda.total || 0)}</td>
                       <td className="text-end">
-                        <div className="btn-group gap-1">
-                          <button
-                            className="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1"
-                            onClick={() => handleVerDetalhes(id)}
-                            title="Ver Detalhes"
-                          >
-                            <i className="bi bi-eye"></i> Detalhes
-                          </button>
-                          {!cancelada && (
+                        <div className="d-inline-flex align-items-center">
                             <button
-                              className="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
-                              onClick={() => setConfirmarCancelar(venda)}
-                              title="Cancelar Venda"
+                              type="button"
+                              className="btn btn-outline-info me-2"
+                              onClick={() => handleVerDetalhes(id)}
+                              title="Ver detalhes da venda"
                             >
-                              <i className="bi bi-x-circle"></i> Cancelar
+                              Detalhes
                             </button>
-                          )}
-                        </div>
+                            {!cancelada && (
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger"
+                                onClick={() => setConfirmarCancelar(venda)}
+                                title="Cancelar venda"
+                              >
+                                Cancelar
+                              </button>
+                            )}
+                          </div>
                       </td>
                     </tr>
                   )

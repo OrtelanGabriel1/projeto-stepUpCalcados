@@ -70,3 +70,52 @@
     margin-left: 0;
   }
 }
+
+/* Botões de ação padronizados nas tabelas */
+.table td .btn {
+  border-radius: 5px;
+  padding: 0.45rem 1rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.table td .btn-outline-primary,
+.table td .btn-outline-info {
+  color: #0dcaf0;
+  border-color: #0dcaf0;
+  background-color: #fff;
+}
+
+.table td .btn-outline-primary:hover,
+.table td .btn-outline-info:hover {
+  color: #fff;
+  border-color: #0dcaf0;
+  background-color: #0dcaf0;
+}
+
+.table td .btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+  background-color: #fff;
+}
+
+.table td .btn-outline-danger:hover {
+  color: #fff;
+  border-color: #dc3545;
+  background-color: #dc3545;
+}
+
+.table td .btn + .btn,
+.table td .btn-group .btn + .btn {
+  margin-left: 0.35rem;
+}
+
+.table td.text-end,
+.table td.text-center {
+  vertical-align: middle;
+  white-space: nowrap;
+}

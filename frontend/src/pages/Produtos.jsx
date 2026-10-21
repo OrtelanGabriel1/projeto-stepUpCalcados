@@ -323,18 +323,20 @@ export default function Produtos() {
                           </td>
                           <td className="text-center">
                             <button
-                              className="btn btn-sm btn-outline-primary me-1"
-                              title="Editar Produto"
+                              type="button"
+                              className="btn btn-outline-info me-2"
+                              title="Editar produto"
                               onClick={() => handleAbrirModalEditar(produto)}
                             >
-                              <i className="bi bi-pencil-fill"></i>
+                              Editar
                             </button>
                             <button
-                              className="btn btn-sm btn-outline-danger"
-                              title="Excluir Produto"
+                              type="button"
+                              className="btn btn-outline-danger"
+                              title="Excluir produto"
                               onClick={() => setConfirmarDelete(produto)}
                             >
-                              <i className="bi bi-trash-fill"></i>
+                              Excluir
                             </button>
                           </td>
                         </tr>

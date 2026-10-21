@@ -153,18 +153,20 @@ export default function Categorias() {
                       <td>{item.descricao || "-"}</td>
                       <td className="text-end">
                         <button
-                          className="btn btn-sm btn-outline-primary me-2"
+                          type="button"
+                          className="btn btn-outline-info me-2"
                           onClick={() => handleAbrirEditarModal(item)}
-                          title="Editar"
+                          title="Editar categoria"
                         >
-                          <i className="bi bi-pencil"></i>
+                          Editar
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          type="button"
+                          className="btn btn-outline-danger"
                           onClick={() => setConfirmarDelete(item)}
-                          title="Excluir"
+                          title="Excluir categoria"
                         >
-                          <i className="bi bi-trash"></i>
+                          Excluir
                         </button>
                       </td>
                     </tr>
