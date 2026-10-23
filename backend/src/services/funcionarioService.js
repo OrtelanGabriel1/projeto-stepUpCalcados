@@ -1,3 +1,4 @@
+
 const bcrypt = require('bcryptjs');
 const funcionarioRepository = require('../repositories/funcionarioRepository');
 
@@ -14,9 +15,11 @@ class FuncionarioService {
 
   async buscarPorId(id) {
     const funcionario = await funcionarioRepository.buscarPorId(id);
+
     if (!funcionario) {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
+
     return {
       sucesso: true,
       dados: funcionario
@@ -31,7 +34,13 @@ class FuncionarioService {
     }
 
     const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
-    const novoFuncionario = { nome, email, senha: senhaHash, tipo_funcionario };
+    const novoFuncionario = {
+      nome,
+      email,
+      senha: senhaHash,
+      tipo_funcionario
+    };
+
     const funcionarioCriado = await funcionarioRepository.criar(novoFuncionario);
 
     return {
@@ -46,17 +55,39 @@ class FuncionarioService {
     }
 
     const existe = await funcionarioRepository.buscarPorId(id);
+
     if (!existe) {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
 
     const { nome, email, senha, tipo_funcionario } = dados;
-    if (!nome || !email || !senha || !tipo_funcionario) {
-      throw { status: 400, mensagem: 'Todos os campos são obrigatórios' };
+
+    if (!nome || !email || !tipo_funcionario) {
+      throw {
+        status: 400,
+        mensagem: 'Nome, email e tipo do funcionário são obrigatórios'
+      };
     }
 
-    const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
-    await funcionarioRepository.atualizar(id, { nome, email, senha: senhaHash, tipo_funcionario });
+    // A senha é opcional na edição.
+    const dadosAtualizacao = {
+      nome,
+      email,
+      tipo_funcionario
+    };
+
+    if (senha && String(senha).trim()) {
+      if (String(senha).length < 6) {
+        throw {
+          status: 400,
+          mensagem: 'A senha deve ter pelo menos 6 caracteres'
+        };
+      }
+
+      dadosAtualizacao.senha = await bcrypt.hash(senha, SALT_ROUNDS);
+    }
+
+    await funcionarioRepository.atualizar(id, dadosAtualizacao);
 
     return {
       sucesso: true,
@@ -70,20 +101,14 @@ class FuncionarioService {
     }
 
     const existe = await funcionarioRepository.buscarPorId(id);
+
     if (!existe) {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
 
-    const temVendas = await funcionarioRepository.temVendas(id);
-    if (temVendas) {
-      throw {
-        status: 409,
-        mensagem: 'Não é possível excluir o funcionário pois ele possui vendas registradas. O funcionário foi desativado para preservar o histórico.',
-        acao: 'desativado'
-      };
-    }
-
+    // Desativa o funcionário para preservar o histórico de vendas.
     await funcionarioRepository.desativar(id);
+
     return {
       sucesso: true,
       mensagem: 'Funcionário desativado com sucesso'

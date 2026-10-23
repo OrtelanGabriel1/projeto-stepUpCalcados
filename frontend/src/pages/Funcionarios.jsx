@@ -366,9 +366,9 @@ export default function Funcionarios() {
               onChange={handleChange}
               required
             >
-              <option value="vendedor">vendedor</option>
-              <option value="gerente">gerente</option>
-              <option value="admin">admin</option>
+              <option value="Vendedor">Vendedor</option>
+              <option value="Gerente">Gerente</option>
+              <option value="Estoquista">Estoquista</option>
             </select>
           </div>
 
