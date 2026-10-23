@@ -11,6 +11,15 @@ import PageHeader from '../components/PageHeader';
 const historicoService = createResourceService('historico-preco');
 const produtoService = createResourceService('produto');
 
+const extrairDados = (res) => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.dados)) return res.dados;
+  if (Array.isArray(res?.data?.dados)) return res.data.dados;
+  if (Array.isArray(res?.data)) return res.data;
+
+  return [];
+};
+
 export default function HistoricoPrecos() {
   const [historicos, setHistoricos] = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -30,8 +39,8 @@ export default function HistoricoPrecos() {
           produtoService.getAll ? produtoService.getAll() : produtoService.listar()
         ]);
 
-        const dadosHistorico = Array.isArray(resHistoricos) ? resHistoricos : resHistoricos.data || [];
-        const dadosProdutos = Array.isArray(resProdutos) ? resProdutos : resProdutos.data || [];
+        const dadosHistorico = extrairDados(resHistoricos);
+        const dadosProdutos = extrairDados(resProdutos);
 
         setHistoricos(dadosHistorico);
         setProdutos(dadosProdutos);
@@ -61,7 +70,7 @@ export default function HistoricoPrecos() {
         let dados = [];
         if (!produtoSelecionado) {
           const res = await (historicoService.getAll ? historicoService.getAll() : historicoService.listar());
-          dados = Array.isArray(res) ? res : res.data || [];
+          dados = extrairDados(res);
         } else {
           const res = await api.get(`/historico-preco/produto/${produtoSelecionado}`);
           dados = Array.isArray(res.data) ? res.data : res.data?.dados || [];
