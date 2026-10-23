@@ -30,6 +30,9 @@ async cadastrar(req, res) {
         const resultado = await ProdutoService.criarProduto(req.body);
         res.status(201).json(resultado);
     } catch (erro) {
+        if (!erro.status || erro.status >= 500) {
+            console.error(`[ERRO 500] POST ${req.originalUrl} —`, erro);
+        }
         res.status(erro.status || 500).json({
             sucesso: false,
             mensagem: erro.mensagem || "Erro interno do servidor",
