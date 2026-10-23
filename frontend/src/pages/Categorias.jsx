@@ -61,7 +61,13 @@ export default function Categorias() {
 
     try {
       if (categoriaEditando) {
-        await categoriaService.atualizar(categoriaEditando.id, form);
+        // Pega o ID seja lá qual for o nome que o backend está enviando
+        const idDaCategoria = categoriaEditando.id || categoriaEditando.id_categoria;
+        
+        // Verificação no console para garantir qual é o ID correto
+        console.log("Dados da categoria sendo editada:", categoriaEditando);
+
+        await categoriaService.atualizar(idDaCategoria, form);
         setToast({
           mensagem: "Categoria atualizada com sucesso!",
           tipo: "success",
@@ -89,7 +95,8 @@ export default function Categorias() {
     if (!confirmarDelete) return;
 
     try {
-      await categoriaService.deletar(confirmarDelete.id);
+      const idDaCategoria = confirmarDelete.id || confirmarDelete.id_categoria;
+      await categoriaService.deletar(idDaCategoria);
       setToast({
         mensagem: "Categoria excluída com sucesso!",
         tipo: "success",
@@ -147,8 +154,8 @@ export default function Categorias() {
                 </thead>
                 <tbody>
                   {categorias.map((item, index) => (
-                    <tr key={item.id || index}>
-                      <td>{item.id || index + 1}</td>
+                    <tr key={item.id || item.id_categoria || index}>
+                      <td>{item.id || item.id_categoria || index + 1}</td>
                       <td>{item.nome}</td>
                       <td>{item.descricao || "-"}</td>
                       <td className="text-end">
