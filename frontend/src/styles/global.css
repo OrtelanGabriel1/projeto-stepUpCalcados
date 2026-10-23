@@ -9,6 +9,20 @@
   --sidebar-width: 250px;
 }
 
+[data-bs-theme="dark"] {
+  --sidebar-bg: #111827;
+  --sidebar-text: #cbd5e1;
+  --sidebar-hover: #273449;
+  --bs-body-bg: #111827;
+  --bs-body-color: #e2e8f0;
+}
+
+body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
@@ -118,4 +132,25 @@
 .table td.text-center {
   vertical-align: middle;
   white-space: nowrap;
+}
+
+[data-bs-theme="dark"] .bg-white {
+  background-color: #1f2937 !important;
+  color: #e2e8f0 !important;
+  border-color: #374151 !important;
+}
+
+[data-bs-theme="dark"] .bg-light,
+[data-bs-theme="dark"] .table-light {
+  --bs-table-bg: #273449;
+  --bs-table-color: #e2e8f0;
+  --bs-table-border-color: #374151;
+  background-color: #273449 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .table td .btn-outline-primary,
+[data-bs-theme="dark"] .table td .btn-outline-info,
+[data-bs-theme="dark"] .table td .btn-outline-danger {
+  background-color: #1f2937;
 }

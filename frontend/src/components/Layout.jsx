@@ -1,11 +1,22 @@
 
 // frontend/src/components/Layout.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const { funcionario, logout } = useAuth();
+  const [temaEscuro, setTemaEscuro] = useState(
+    () => localStorage.getItem("stepup-tema") === "escuro"
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-bs-theme",
+      temaEscuro ? "dark" : "light"
+    );
+    localStorage.setItem("stepup-tema", temaEscuro ? "escuro" : "claro");
+  }, [temaEscuro]);
 
   // Verifica se o funcionário conectado é gerente
   const tipoFuncionario = String(
@@ -73,6 +84,18 @@ return (
           }}
         >
           <div className="d-flex flex-column">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-light mb-3"
+              onClick={() => setTemaEscuro((temaAtual) => !temaAtual)}
+              aria-label={temaEscuro ? "Ativar tema claro" : "Ativar tema escuro"}
+            >
+              <i
+                className={`bi ${temaEscuro ? "bi-sun" : "bi-moon-stars"} me-2`}
+                aria-hidden="true"
+              />
+              {temaEscuro ? "Modo claro" : "Modo escuro"}
+            </button>
             <small className="text-muted">
               {funcionario?.nome || "Funcionário"}
             </small>
