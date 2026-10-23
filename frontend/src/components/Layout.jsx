@@ -17,14 +17,14 @@ export default function Layout() {
   const getNavLinkClass = ({ isActive }) =>
     `nav-link${isActive ? " active" : ""}`;
 
-  return (
+return (
     <div className="d-flex">
       {/* SIDEBAR */}
       <div className="sidebar">
         {/* Seção Superior */}
-        <div style={{ padding: "1.5rem 1rem 1rem" }}>
-          <h5 className="fw-bold text-white mb-0">👟 StepUp</h5>
-          <small className="text-muted">Calçados</small>
+        <div style={{ padding: "1.5rem 1rem 1rem" }} className="text-center">
+          <h5 className="fw-bold text-white mb-0">StepUp</h5>
+          <small className="text-white">Calçados</small>
         </div>
 
         {/* Nav */}
