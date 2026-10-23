@@ -108,7 +108,7 @@ export default function Login() {
           </div>
         </div>
         <div className="card-footer bg-transparent text-muted text-center small py-3">
-          StepUp Calçados © 2024
+          StepUp Calçados © 2026
         </div>
       </div>
     </div>
