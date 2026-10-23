@@ -1,3 +1,4 @@
+
 const authService = require('../services/authService');
 
 class AuthController {
@@ -5,18 +6,42 @@ class AuthController {
     try {
       const { email, senha } = req.body;
       const resultado = await authService.login(email, senha);
-      res.status(200).json(resultado);
+
+      return res.status(200).json(resultado);
     } catch (erro) {
-      res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
+      return res.status(erro.status || 500).json({
+        sucesso: false,
+        mensagem: erro.mensagem || 'Erro interno'
+      });
     }
   }
 
   async register(req, res) {
     try {
       const resultado = await authService.register(req.body);
-      res.status(201).json(resultado);
+
+      return res.status(201).json(resultado);
     } catch (erro) {
-      res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
+      return res.status(erro.status || 500).json({
+        sucesso: false,
+        mensagem: erro.mensagem || 'Erro interno'
+      });
+    }
+  }
+
+  async alterarSenha(req, res) {
+    try {
+      const { senha } = req.body;
+      const id = req.funcionario.id;
+
+      const resultado = await authService.alterarSenha(id, senha);
+
+      return res.status(200).json(resultado);
+    } catch (erro) {
+      return res.status(erro.status || 500).json({
+        sucesso: false,
+        mensagem: erro.mensagem || 'Erro interno'
+      });
     }
   }
 }

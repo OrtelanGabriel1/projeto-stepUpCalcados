@@ -1,4 +1,3 @@
-
 const pool = require('../config/database');
 
 class FuncionarioRepository {
@@ -47,7 +46,7 @@ class FuncionarioRepository {
   async atualizar(id, funcionario) {
     const { nome, email, senha, tipo_funcionario } = funcionario;
 
-    // Atualiza a senha somente se uma nova senha foi informada.
+    // Atualiza a senha somente quando uma nova senha for informada.
     if (senha) {
       const [result] = await pool.query(
         'UPDATE funcionario SET nome = ?, email = ?, senha = ?, tipo_funcionario = ? WHERE id_funcionario = ? AND ativo = true',
@@ -57,10 +56,18 @@ class FuncionarioRepository {
       return result.affectedRows > 0;
     }
 
-    // Atualiza os outros campos sem modificar a senha atual.
     const [result] = await pool.query(
       'UPDATE funcionario SET nome = ?, email = ?, tipo_funcionario = ? WHERE id_funcionario = ? AND ativo = true',
       [nome, email, tipo_funcionario, id]
+    );
+
+    return result.affectedRows > 0;
+  }
+
+  async atualizarSenha(id, senhaHash) {
+    const [result] = await pool.query(
+      'UPDATE funcionario SET senha = ? WHERE id_funcionario = ? AND ativo = true',
+      [senhaHash, id]
     );
 
     return result.affectedRows > 0;

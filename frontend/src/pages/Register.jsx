@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../services/authService';
@@ -17,8 +18,13 @@ export default function Register() {
     e.preventDefault();
     setErro(null);
 
+    if (senha.length < 6) {
+      setErro('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
     if (senha !== confirmarSenha) {
-      setErro('As palavras-passe não coincidem.');
+      setErro('As senhas não coincidem.');
       return;
     }
 
@@ -29,11 +35,19 @@ export default function Register() {
         nome,
         email,
         senha,
-        tipo_funcionario: tipoFuncionario,
+        tipo_funcionario: tipoFuncionario
       });
-      navigate('/login', { state: { mensagemSucesso: 'Registo efetuado com sucesso! Efetue o seu login.' } });
+
+      navigate('/login', {
+        state: {
+          mensagemSucesso: 'Cadastro efetuado com sucesso! Faça seu login.'
+        }
+      });
     } catch (err) {
-      setErro(err.response?.data?.mensagem || 'Erro ao efetuar o registo do utilizador.');
+      setErro(
+        err.response?.data?.mensagem ||
+        'Erro ao cadastrar o usuário.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -41,13 +55,19 @@ export default function Register() {
 
   return (
     <div className="bg-light d-flex justify-content-center align-items-center min-vh-100 py-4">
-      <div className="card shadow-sm rounded-3 w-100" style={{ maxWidth: '420px' }}>
+      <div
+        className="card shadow-sm rounded-3 w-100"
+        style={{ maxWidth: '420px' }}
+      >
         <div className="card-header bg-primary text-white text-center py-3">
           <h4 className="mb-1">👟 StepUp Calçados</h4>
           <small>Criar Nova Conta</small>
         </div>
+
         <div className="card-body p-4">
-          <h5 className="card-title text-center mb-4">Registo de Utilizador</h5>
+          <h5 className="card-title text-center mb-4">
+            Cadastro de Usuário
+          </h5>
 
           {erro && (
             <div className="alert alert-danger" role="alert">
@@ -60,6 +80,7 @@ export default function Register() {
               <label htmlFor="nome" className="form-label">
                 Nome Completo
               </label>
+
               <input
                 type="text"
                 className="form-control"
@@ -74,6 +95,7 @@ export default function Register() {
               <label htmlFor="email" className="form-label">
                 E-mail
               </label>
+
               <input
                 type="email"
                 className="form-control"
@@ -88,6 +110,7 @@ export default function Register() {
               <label htmlFor="tipoFuncionario" className="form-label">
                 Cargo / Função
               </label>
+
               <select
                 className="form-select"
                 id="tipoFuncionario"
@@ -103,28 +126,38 @@ export default function Register() {
 
             <div className="mb-3">
               <label htmlFor="senha" className="form-label">
-                Palavra-passe
+                Senha
               </label>
+
               <input
                 type="password"
                 className="form-control"
                 id="senha"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
+                minLength={6}
+                autoComplete="new-password"
                 required
               />
+
+              <small className="text-muted">
+                A senha deve ter pelo menos 6 caracteres.
+              </small>
             </div>
 
             <div className="mb-3">
               <label htmlFor="confirmarSenha" className="form-label">
-                Confirmar Palavra-passe
+                Confirmar Senha
               </label>
+
               <input
                 type="password"
                 className="form-control"
                 id="confirmarSenha"
                 value={confirmarSenha}
                 onChange={(e) => setConfirmarSenha(e.target.value)}
+                minLength={6}
+                autoComplete="new-password"
                 required
               />
             </div>
@@ -134,27 +167,20 @@ export default function Register() {
               className="btn btn-primary w-100 mt-2"
               disabled={carregando}
             >
-              {carregando ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  A registar...
-                </>
-              ) : (
-                'Cadastrar'
-              )}
+              {carregando ? 'Cadastrando...' : 'Cadastrar'}
             </button>
           </form>
 
           <div className="text-center mt-3">
             <small>
-              Já tem uma conta? <Link to="/login" className="text-decoration-none">Voltar ao Login</Link>
+              Já tem uma conta?{' '}
+              <Link to="/login" className="text-decoration-none">
+                Voltar ao Login
+              </Link>
             </small>
           </div>
         </div>
+
         <div className="card-footer bg-transparent text-muted text-center small py-3">
           StepUp Calçados © 2024
         </div>
