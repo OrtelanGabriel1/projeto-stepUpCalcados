@@ -320,7 +320,7 @@ export default function Funcionarios() {
             ? 'Editar Funcionário'
             : 'Novo Funcionário'
         }
-        aberto={modalAberto}
+        show={modalAberto}
         onClose={handleFecharModal}
       >
         <form onSubmit={handleSalvar}>
@@ -418,7 +418,7 @@ export default function Funcionarios() {
         <Modal
           id="modalConfirmarDelete"
           titulo="Confirmar Exclusão"
-          aberto={Boolean(confirmarDelete)}
+          show={Boolean(confirmarDelete)}
           onClose={() => setConfirmarDelete(null)}
         >
           <p className="mb-0">
