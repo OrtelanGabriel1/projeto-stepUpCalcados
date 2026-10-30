@@ -18,6 +18,7 @@ const formEdicaoInicial = { quantidade: '', motivo: '' };
 
 export default function Estoque() {
   const { funcionario } = useAuth();
+  const podeRegistrarEntrada = String(funcionario?.tipo_funcionario || '').toLowerCase() !== 'vendedor';
   // Estados de Dados
   const [estoques, setEstoques] = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -326,9 +327,11 @@ export default function Estoque() {
             <i className="bi bi-exclamation-triangle-fill me-1"></i>
             {filtroAlertas ? 'Exibindo Alertas (≤ 5)' : 'Ver Alertas'}
           </button>
+        {podeRegistrarEntrada && (
           <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCadastro}>
             <i className="bi bi-box-arrow-in-down me-1"></i> Registrar entrada
           </button>
+        )}
         </div>
       </div>
 

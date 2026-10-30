@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createResourceService } from '../services/resourceService';
 import { formatarMoeda } from '../utils';
+import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
@@ -23,6 +24,8 @@ const formInicial = {
 };
 
 export default function Produtos() {
+  const { funcionario } = useAuth();
+  const podeCadastrarProduto = String(funcionario?.tipo_funcionario || '').toLowerCase() !== 'vendedor';
   // Estados de Dados
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -341,9 +344,11 @@ export default function Produtos() {
             Limpar
           </button>
         </div>
-        <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCriar}>
-          <i className="bi bi-plus-lg me-1"></i> + Novo Produto
-        </button>
+        {podeCadastrarProduto && (
+          <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCriar}>
+            <i className="bi bi-plus-lg me-1"></i> + Novo Produto
+          </button>
+        )}
       </div>
 
       <hr className="mt-0" />
