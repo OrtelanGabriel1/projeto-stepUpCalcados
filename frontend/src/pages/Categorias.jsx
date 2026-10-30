@@ -161,7 +161,7 @@ export default function Categorias() {
                       <td className="text-end">
                         <button
                           type="button"
-                          className="btn btn-outline-info me-2"
+                          className="btn btn-sm btn-outline-info me-2"
                           onClick={() => handleAbrirEditarModal(item)}
                           title="Editar categoria"
                         >
@@ -169,7 +169,7 @@ export default function Categorias() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-outline-danger"
+                          className="btn btn-sm btn-outline-danger"
                           onClick={() => setConfirmarDelete(item)}
                           title="Excluir categoria"
                         >

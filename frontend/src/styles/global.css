@@ -99,28 +99,34 @@ body {
 
 .table td .btn-outline-primary,
 .table td .btn-outline-info {
-  color: #0dcaf0;
-  border-color: #0dcaf0;
-  background-color: #fff;
+  color: #fff;
+  border-color: #0d6efd;
+  background-color: #0d6efd;
 }
 
 .table td .btn-outline-primary:hover,
 .table td .btn-outline-info:hover {
   color: #fff;
-  border-color: #0dcaf0;
-  background-color: #0dcaf0;
+  border-color: #0d6efd;
+  background-color: #0d6efd;
 }
 
 .table td .btn-outline-danger {
-  color: #dc3545;
+  color: #fff;
   border-color: #dc3545;
-  background-color: #fff;
+  background-color: #dc3545;
 }
 
 .table td .btn-outline-danger:hover {
   color: #fff;
   border-color: #dc3545;
   background-color: #dc3545;
+}
+
+.table td .btn-sm {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 
 .table td .btn + .btn,
@@ -147,10 +153,4 @@ body {
   --bs-table-border-color: #374151;
   background-color: #273449 !important;
   color: #e2e8f0 !important;
-}
-
-[data-bs-theme="dark"] .table td .btn-outline-primary,
-[data-bs-theme="dark"] .table td .btn-outline-info,
-[data-bs-theme="dark"] .table td .btn-outline-danger {
-  background-color: #1f2937;
 }

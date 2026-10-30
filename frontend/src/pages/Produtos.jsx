@@ -324,7 +324,7 @@ export default function Produtos() {
                           <td className="text-center">
                             <button
                               type="button"
-                              className="btn btn-outline-info me-2"
+                              className="btn btn-sm btn-outline-info me-2"
                               title="Editar produto"
                               onClick={() => handleAbrirModalEditar(produto)}
                             >
@@ -332,7 +332,7 @@ export default function Produtos() {
                             </button>
                             <button
                               type="button"
-                              className="btn btn-outline-danger"
+                              className="btn btn-sm btn-outline-danger"
                               title="Excluir produto"
                               onClick={() => setConfirmarDelete(produto)}
                             >

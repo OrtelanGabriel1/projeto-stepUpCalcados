@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createResourceService } from '../services/resourceService';
 import { formatarData } from '../utils';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import PageHeader from '../components/PageHeader';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
@@ -12,9 +14,10 @@ const produtoService = createResourceService('produto');
 
 // Estados iniciais dos formulários
 const formCadastroInicial = { id_produto: '', quantidade: '' };
-const formEdicaoInicial = { quantidade: '' };
+const formEdicaoInicial = { quantidade: '', motivo: '' };
 
 export default function Estoque() {
+  const { funcionario } = useAuth();
   // Estados de Dados
   const [estoques, setEstoques] = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -91,9 +94,9 @@ export default function Estoque() {
     setModalCadastro(true);
   };
 
-  const handleAbrirModalEdicao = (itemEstoque) => {
+  const handleAbrirModalAjuste = (itemEstoque) => {
     setModalEdicao(itemEstoque);
-    setFormEdicao({ quantidade: itemEstoque.quantidade });
+    setFormEdicao({ quantidade: itemEstoque.quantidade, motivo: '' });
   };
 
   // Salvar Entrada de Produto no Estoque
@@ -113,22 +116,17 @@ export default function Estoque() {
 
     setSalvando(true);
     try {
-      const existente = estoques.find(
-        (est) => Number(est.id_produto) === Number(formCadastro.id_produto)
-      );
+      const payload = {
+        id_produto: Number(formCadastro.id_produto),
+        id_funcionario: funcionario?.id_funcionario ? Number(funcionario.id_funcionario) : null,
+        tipo: 'entrada',
+        quantidade: qtd,
+        motivo: 'Entrada de estoque'
+      };
 
-      if (existente) {
-        const idEstoque = existente.id_estoque || existente.id;
-        const novaQuantidade = Number(existente.quantidade || 0) + qtd;
-        await estoqueService.atualizar(idEstoque, { quantidade: novaQuantidade });
-        exibirToast('Entrada de produto registrada com sucesso!', 'success');
-      } else {
-        await estoqueService.criar({
-          id_produto: parseInt(formCadastro.id_produto, 10),
-          quantidade: qtd
-        });
-        exibirToast('Estoque registrado com sucesso!', 'success');
-      }
+      const res = await api.post('/movimentacao-estoque', payload);
+      const msg = res.data?.mensagem || res.mensagem || 'Entrada registrada com sucesso!';
+      exibirToast(msg, 'success');
 
       setModalCadastro(false);
       setFormCadastro(formCadastroInicial);
@@ -141,7 +139,7 @@ export default function Estoque() {
     }
   };
 
-  // Salvar Atualização de Quantidade
+  // Salvar Ajuste de Quantidade
   const handleSalvarEdicao = async (e) => {
     e.preventDefault();
 
@@ -151,16 +149,30 @@ export default function Estoque() {
       return;
     }
 
+    if (!formEdicao.motivo || !formEdicao.motivo.trim()) {
+      exibirToast('Informe uma nota justificando o ajuste.', 'danger');
+      return;
+    }
+
     setSalvando(true);
     try {
-      const idEstoque = modalEdicao.id_estoque || modalEdicao.id;
-      await estoqueService.atualizar(idEstoque, { quantidade: qtd });
-      exibirToast('Quantidade em estoque atualizada com sucesso!', 'success');
+      const payload = {
+        id_produto: Number(modalEdicao.id_produto),
+        id_funcionario: funcionario?.id_funcionario ? Number(funcionario.id_funcionario) : null,
+        tipo: 'ajuste',
+        quantidade: qtd,
+        motivo: formEdicao.motivo.trim()
+      };
+
+      const res = await api.post('/movimentacao-estoque', payload);
+      const msg = res.data?.mensagem || res.mensagem || 'Ajuste registrado com sucesso!';
+      exibirToast(msg, 'success');
+
       setModalEdicao(null);
       setFormEdicao(formEdicaoInicial);
       await carregarDados();
     } catch (err) {
-      const msg = err.response?.data?.mensagem || 'Erro ao atualizar quantidade em estoque.';
+      const msg = err.response?.data?.mensagem || 'Erro ao registrar ajuste de estoque.';
       exibirToast(msg, 'danger');
     } finally {
       setSalvando(false);
@@ -233,7 +245,7 @@ export default function Estoque() {
       >
         <div className="d-flex gap-2">
           <button
-            className="btn btn-warning text-dark shadow-sm"
+            className="btn btn-danger text-white shadow-sm"
             onClick={() => setFiltroAlertas(!filtroAlertas)}
             title="Filtrar produtos com quantidade ≤ 5"
           >
@@ -311,18 +323,18 @@ export default function Estoque() {
                           </td>
                           <td className="text-center">{renderBadgeQuantidade(item.quantidade)}</td>
                           <td className="text-muted small">{formatarData(dataAtualizacao)}</td>
-                          <td className="text-center">
-                            <button
+                            <td className="text-center">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-warning text-dark me-2"
+                                title="Ajustar quantidade"
+                                onClick={() => handleAbrirModalAjuste(item)}
+                              >
+                                Ajuste
+                              </button>
+                              <button
                               type="button"
-                              className="btn btn-outline-info me-2"
-                              title="Editar quantidade"
-                              onClick={() => handleAbrirModalEdicao(item)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
+                               className="btn btn-sm btn-outline-danger"
                               title="Excluir registro"
                               onClick={() => setConfirmarDelete(item)}
                             >
@@ -418,7 +430,7 @@ export default function Estoque() {
       {/* Modal de EDIÇÃO ("Atualizar Quantidade") */}
       <Modal
         show={!!modalEdicao}
-        title="Atualizar Quantidade"
+        title="Ajustar Quantidade"
         onClose={() => !salvando && setModalEdicao(null)}
       >
         <form onSubmit={handleSalvarEdicao}>
@@ -439,7 +451,21 @@ export default function Estoque() {
               min="0"
               placeholder="Ex: 20"
               value={formEdicao.quantidade}
-              onChange={(e) => setFormEdicao({ quantidade: e.target.value })}
+              onChange={(e) => setFormEdicao((prev) => ({ ...prev, quantidade: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label fw-semibold">
+              Nota de Justificativa <span className="text-danger">*</span>
+            </label>
+            <textarea
+              className="form-control"
+              rows="3"
+              placeholder="Ex: Correção de inventário..."
+              value={formEdicao.motivo || ''}
+              onChange={(e) => setFormEdicao((prev) => ({ ...prev, motivo: e.target.value }))}
               required
             />
           </div>

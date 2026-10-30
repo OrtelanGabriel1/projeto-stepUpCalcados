@@ -308,7 +308,7 @@ export default function Vendas() {
                         <div className="d-inline-flex align-items-center">
                             <button
                               type="button"
-                              className="btn btn-outline-info me-2"
+                              className="btn btn-sm btn-outline-info me-2"
                               onClick={() => handleVerDetalhes(id)}
                               title="Ver detalhes da venda"
                             >
@@ -317,7 +317,7 @@ export default function Vendas() {
                             {!cancelada && (
                               <button
                                 type="button"
-                                className="btn btn-outline-danger"
+                                className="btn btn-sm btn-outline-danger"
                                 onClick={() => setConfirmarCancelar(venda)}
                                 title="Cancelar venda"
                               >

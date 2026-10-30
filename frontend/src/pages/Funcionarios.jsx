@@ -285,7 +285,7 @@ export default function Funcionarios() {
                             <div className="d-inline-flex align-items-center">
                               <button
                                 type="button"
-                                className="btn btn-outline-info me-2"
+                                className="btn btn-sm btn-outline-info me-2"
                                 onClick={() => handleEditar(func)}
                                 title="Editar funcionário"
                               >
@@ -294,7 +294,7 @@ export default function Funcionarios() {
 
                               <button
                                 type="button"
-                                className="btn btn-outline-danger"
+                                className="btn btn-sm btn-outline-danger"
                                 onClick={() => setConfirmarDelete(func)}
                                 title="Excluir funcionário"
                               >
