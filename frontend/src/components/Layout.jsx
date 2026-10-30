@@ -33,9 +33,12 @@ return (
       {/* SIDEBAR */}
       <div className="sidebar">
         {/* Seção Superior */}
-        <div style={{ padding: "1.5rem 1rem 1rem" }} className="text-center">
-          <h5 className="fw-bold text-white mb-0">StepUp</h5>
-          <small className="text-white">Calçados</small>
+        <div style={{ padding: "1.5rem 1rem 1rem" }} className="d-flex align-items-center gap-2">
+          <img src="/logo_StepUp.png" alt="Logo StepUp" style={{ width: 64, height: 64, objectFit: "contain", marginLeft: "-0.75rem" }} />
+          <div>
+            <h5 className="fw-bold text-white mb-0">StepUp</h5>
+            <small className="text-white">Calçados</small>
+          </div>
         </div>
 
         {/* Nav */}
