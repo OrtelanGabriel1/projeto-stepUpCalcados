@@ -79,10 +79,8 @@ export default function Estoque() {
     carregarDados();
   }, []);
 
-  // Produtos que ainda NÃO possuem registro na tabela de estoque
-  const produtosDisponiveis = produtos.filter(
-    (prod) => !estoques.some((est) => Number(est.id_produto) === Number(prod.id_produto))
-  );
+  // Produtos disponíveis para entrada de estoque (todos os produtos cadastrados)
+  const produtosDisponiveis = produtos;
 
   // Abertura de Modais
   const handleAbrirModalCadastro = () => {
@@ -98,33 +96,45 @@ export default function Estoque() {
     setFormEdicao({ quantidade: itemEstoque.quantidade });
   };
 
-  // Salvar Novo Registro de Estoque
+  // Salvar Entrada de Produto no Estoque
   const handleSalvarCadastro = async (e) => {
     e.preventDefault();
 
     if (!formCadastro.id_produto) {
-      exibirToast('Selecione um produto para registrar o estoque.', 'danger');
+      exibirToast('Selecione um produto para registrar a entrada.', 'danger');
       return;
     }
 
     const qtd = parseInt(formCadastro.quantidade, 10);
-    if (isNaN(qtd) || qtd < 0) {
-      exibirToast('A quantidade deve ser um número maior ou igual a zero.', 'danger');
+    if (isNaN(qtd) || qtd <= 0) {
+      exibirToast('A quantidade deve ser um número maior que zero.', 'danger');
       return;
     }
 
     setSalvando(true);
     try {
-      await estoqueService.criar({
-        id_produto: parseInt(formCadastro.id_produto, 10),
-        quantidade: qtd
-      });
-      exibirToast('Estoque registrado com sucesso!', 'success');
+      const existente = estoques.find(
+        (est) => Number(est.id_produto) === Number(formCadastro.id_produto)
+      );
+
+      if (existente) {
+        const idEstoque = existente.id_estoque || existente.id;
+        const novaQuantidade = Number(existente.quantidade || 0) + qtd;
+        await estoqueService.atualizar(idEstoque, { quantidade: novaQuantidade });
+        exibirToast('Entrada de produto registrada com sucesso!', 'success');
+      } else {
+        await estoqueService.criar({
+          id_produto: parseInt(formCadastro.id_produto, 10),
+          quantidade: qtd
+        });
+        exibirToast('Estoque registrado com sucesso!', 'success');
+      }
+
       setModalCadastro(false);
       setFormCadastro(formCadastroInicial);
       await carregarDados();
     } catch (err) {
-      const msg = err.response?.data?.mensagem || 'Erro ao cadastrar estoque.';
+      const msg = err.response?.data?.mensagem || 'Erro ao registrar entrada de estoque.';
       exibirToast(msg, 'danger');
     } finally {
       setSalvando(false);
@@ -231,7 +241,7 @@ export default function Estoque() {
             {filtroAlertas ? 'Exibindo Alertas (≤ 5)' : 'Ver Alertas'}
           </button>
           <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCadastro}>
-            <i className="bi bi-plus-lg me-1"></i> + Registrar Estoque
+            <i className="bi bi-box-arrow-in-down me-1"></i> Registrar entrada
           </button>
         </div>
       </PageHeader>
@@ -333,16 +343,16 @@ export default function Estoque() {
       {/* Modal de CADASTRO ("Registrar Estoque") */}
       <Modal
         show={modalCadastro}
-        title="Registrar Estoque"
+        title="Registrar Entrada de Produto no Estoque"
         onClose={() => !salvando && setModalCadastro(false)}
       >
         <form onSubmit={handleSalvarCadastro}>
-          {produtosDisponiveis.length === 0 ? (
-            <div className="alert alert-info mb-3">
-              <i className="bi bi-info-circle me-2"></i>
-              Todos os produtos cadastrados já possuem registro de estoque.
-            </div>
-          ) : (
+            {produtosDisponiveis.length === 0 ? (
+              <div className="alert alert-info mb-3">
+                <i className="bi bi-info-circle me-2"></i>
+                Nenhum produto cadastrado.
+              </div>
+            ) : (
             <div className="mb-3">
               <label className="form-label fw-semibold">
                 Produto <span className="text-danger">*</span>
@@ -364,7 +374,7 @@ export default function Estoque() {
 
           <div className="mb-4">
             <label className="form-label fw-semibold">
-              Quantidade Inicial <span className="text-danger">*</span>
+              Quantidade <span className="text-danger">*</span>
             </label>
             <input
               type="number"

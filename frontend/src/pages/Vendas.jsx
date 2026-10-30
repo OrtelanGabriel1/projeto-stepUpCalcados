@@ -436,15 +436,15 @@ export default function Vendas() {
                           <td className="text-center">{item.quantidade}</td>
                           <td className="text-end">{formatarMoeda(item.preco_venda)}</td>
                           <td className="text-end">{formatarMoeda(item.quantidade * item.preco_venda)}</td>
-                          <td className="text-center">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-link text-danger p-0"
-                              onClick={() => handleRemoverItem(item.id_produto)}
-                            >
-                              <i className="bi bi-x-lg"></i>
-                            </button>
-                          </td>
+                            <td className="text-center">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleRemoverItem(item.id_produto)}
+                              >
+                                Remover
+                              </button>
+                            </td>
                         </tr>
                       ))
                     )}
