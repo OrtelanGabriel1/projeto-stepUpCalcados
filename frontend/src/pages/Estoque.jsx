@@ -233,7 +233,7 @@ export default function Estoque() {
       >
         <div className="d-flex gap-2">
           <button
-            className={`btn ${filtroAlertas ? 'btn-warning' : 'btn-outline-warning'} shadow-sm`}
+            className="btn btn-warning text-dark shadow-sm"
             onClick={() => setFiltroAlertas(!filtroAlertas)}
             title="Filtrar produtos com quantidade ≤ 5"
           >

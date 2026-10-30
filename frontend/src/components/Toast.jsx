@@ -1,18 +1,33 @@
 // frontend/src/components/Toast.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export default function Toast({ mensagem, tipo = "success", onClose }) {
+export default function Toast({ mensagem, tipo = "success", show, variante, onClose }) {
+  const visivel = show !== undefined ? !!show && !!mensagem : !!mensagem;
+  const varianteFinal = variante || tipo || "success";
+  const [fadeOut, setFadeOut] = useState(false);
+  const [apareceu, setApareceu] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
+    if (!visivel) {
+      setFadeOut(false);
+      setApareceu(false);
+      return;
+    }
+    setFadeOut(false);
+    setApareceu(false);
+    const showTimer = setTimeout(() => setApareceu(true), 10);
+    const fadeTimer = setTimeout(() => setFadeOut(true), 2500);
+    const closeTimer = setTimeout(() => {
+      if (onClose) onClose();
     }, 3000);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(fadeTimer);
+      clearTimeout(closeTimer);
+    };
+  }, [visivel, mensagem]);
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  if (!mensagem) return null;
+  if (!visivel) return null;
 
   const bgClasses = {
     success: "text-bg-success",
@@ -26,8 +41,8 @@ export default function Toast({ mensagem, tipo = "success", onClose }) {
     warning: "btn-close"
   };
 
-  const currentBgClass = bgClasses[tipo] || bgClasses.success;
-  const currentBtnCloseClass = btnCloseClasses[tipo] || btnCloseClasses.success;
+  const currentBgClass = bgClasses[varianteFinal] || bgClasses.success;
+  const currentBtnCloseClass = btnCloseClasses[varianteFinal] || btnCloseClasses.success;
 
   return (
     <div
@@ -36,7 +51,10 @@ export default function Toast({ mensagem, tipo = "success", onClose }) {
         position: 'fixed',
         top: '1rem',
         right: '1rem',
-        zIndex: 9999
+        zIndex: 9999,
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
+        opacity: fadeOut ? 0 : apareceu ? 1 : 0,
+        transform: fadeOut ? 'translateY(-10px)' : apareceu ? 'translateY(0)' : 'translateY(-10px)'
       }}
       role="alert"
       aria-live="assertive"
