@@ -283,7 +283,6 @@ export default function Produtos() {
                 <table className="table table-hover table-striped align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: '60px' }}>#</th>
                       <th>Nome</th>
                       <th>Categoria</th>
                       <th className="text-center">Tam.</th>
@@ -299,7 +298,6 @@ export default function Produtos() {
                       const nomeCat = obterNomeCategoria(produto);
                       return (
                         <tr key={produto.id_produto || index}>
-                          <td className="fw-semibold text-muted">{produto.id_produto || index + 1}</td>
                           <td className="fw-bold">{produto.nome}</td>
                           <td>
                             {nomeCat ? (

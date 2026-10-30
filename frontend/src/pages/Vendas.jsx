@@ -276,7 +276,6 @@ export default function Vendas() {
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
               <tr>
-                <th>ID</th>
                 <th>Funcionário</th>
                 <th>Data</th>
                 <th>Forma Pagamento</th>
@@ -287,7 +286,7 @@ export default function Vendas() {
             <tbody>
               {vendas.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                    <td colSpan="5" className="text-center py-4 text-muted">
                     Nenhuma venda encontrada.
                   </td>
                 </tr>
@@ -299,7 +298,6 @@ export default function Vendas() {
 
                   return (
                     <tr key={id} className={cancelada ? 'table-secondary text-muted' : ''}>
-                      <td>#{id}</td>
                       <td>{venda.nome_funcionario || venda.funcionario?.nome || 'Sistema'}</td>
                       <td>{formatarData(venda.data_venda || venda.created_at || venda.data)}</td>
                       <td>{renderBadgeFormaPagamento(venda.forma_pagamento)}</td>

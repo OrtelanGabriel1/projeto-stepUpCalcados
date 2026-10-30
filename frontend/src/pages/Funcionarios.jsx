@@ -225,7 +225,6 @@ export default function Funcionarios() {
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
-                  <th scope="col" style={{ width: '60px' }}>#</th>
                   <th scope="col">Nome</th>
                   <th scope="col">Email</th>
                   <th scope="col">Tipo</th>
@@ -244,7 +243,7 @@ export default function Funcionarios() {
                 {funcionarios.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="5"
                       className="text-center py-4 text-muted"
                     >
                       Nenhum funcionário cadastrado.
@@ -261,7 +260,6 @@ export default function Funcionarios() {
 
                     return (
                       <tr key={idFunc || index}>
-                        <td>{idFunc || index + 1}</td>
                         <td className="fw-semibold">{func.nome}</td>
                         <td>{func.email}</td>
                         <td>{renderBadgeTipo(func.tipo_funcionario)}</td>

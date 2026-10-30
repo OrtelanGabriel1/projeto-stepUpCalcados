@@ -146,7 +146,6 @@ export default function Categorias() {
               <table className="table table-hover table-striped align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>#</th>
                     <th>Nome</th>
                     <th>Descrição</th>
                     <th className="text-end">Ações</th>
@@ -155,7 +154,6 @@ export default function Categorias() {
                 <tbody>
                   {categorias.map((item, index) => (
                     <tr key={item.id || item.id_categoria || index}>
-                      <td>{item.id || item.id_categoria || index + 1}</td>
                       <td>{item.nome}</td>
                       <td>{item.descricao || "-"}</td>
                       <td className="text-end">
