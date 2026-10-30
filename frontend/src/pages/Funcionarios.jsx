@@ -30,6 +30,9 @@ export default function Funcionarios() {
   const [salvando, setSalvando] = useState(false);
   const [confirmarDelete, setConfirmarDelete] = useState(null);
 
+  // Filtros de pesquisa
+  const [filtros, setFiltros] = useState({ busca: '', status: '', tipo: '' });
+
   const carregarFuncionarios = useCallback(async () => {
     setLoading(true);
     setErro(null);
@@ -186,9 +189,23 @@ export default function Funcionarios() {
     }
   };
 
-  if (loading) {
-    return <Loading />;
-  }
+  const funcionariosFiltrados = funcionarios.filter((func) => {
+    if (filtros.busca) {
+      const termo = filtros.busca.toLowerCase();
+      if (
+        !(func.nome || '').toLowerCase().includes(termo) &&
+        !(func.email || '').toLowerCase().includes(termo)
+      ) return false;
+    }
+    if (filtros.status) {
+      const status = (func.status || 'Ativo').toLowerCase();
+      if (status !== filtros.status.toLowerCase()) return false;
+    }
+    if (filtros.tipo && (func.tipo_funcionario || '').toLowerCase() !== filtros.tipo.toLowerCase()) return false;
+    return true;
+  });
+
+  const limparFiltros = () => setFiltros({ busca: '', status: '', tipo: '' });
 
   return (
     <div className="container-fluid py-4">
@@ -218,6 +235,55 @@ export default function Funcionarios() {
           </button>
         </div>
       )}
+
+      {/* Filtros de pesquisa */}
+      <div className="card shadow-sm border-0 mb-3">
+        <div className="card-body">
+          <div className="row g-2 align-items-end">
+            <div className="col-md-4">
+              <label className="form-label small fw-semibold">Busca</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Nome ou email..."
+                value={filtros.busca}
+                onChange={(e) => setFiltros((prev) => ({ ...prev, busca: e.target.value }))}
+              />
+            </div>
+            <div className="col-md-3">
+              <label className="form-label small fw-semibold">Status</label>
+              <select
+                className="form-select"
+                value={filtros.status}
+                onChange={(e) => setFiltros((prev) => ({ ...prev, status: e.target.value }))}
+              >
+                <option value="">Todos</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label className="form-label small fw-semibold">Tipo</label>
+              <select
+                className="form-select"
+                value={filtros.tipo}
+                onChange={(e) => setFiltros((prev) => ({ ...prev, tipo: e.target.value }))}
+              >
+                <option value="">Todos</option>
+                <option value="admin">Admin</option>
+                <option value="gerente">Gerente</option>
+                <option value="vendedor">Vendedor</option>
+                <option value="estoquista">Estoquista</option>
+              </select>
+            </div>
+            <div className="col-md-2">
+              <button type="button" className="btn btn-outline-secondary w-100" onClick={limparFiltros}>
+                Limpar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="card shadow-sm border-0">
         <div className="card-body p-0">
@@ -249,8 +315,17 @@ export default function Funcionarios() {
                       Nenhum funcionário cadastrado.
                     </td>
                   </tr>
+                ) : funcionariosFiltrados.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="text-center py-4 text-muted"
+                    >
+                      Nenhum funcionário encontrado para os filtros selecionados.
+                    </td>
+                  </tr>
                 ) : (
-                  funcionarios.map((func, index) => {
+                  funcionariosFiltrados.map((func, index) => {
                     const idFunc =
                       func.id_funcionario || func.id;
 

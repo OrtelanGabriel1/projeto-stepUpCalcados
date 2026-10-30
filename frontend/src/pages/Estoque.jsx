@@ -28,6 +28,9 @@ export default function Estoque() {
   const [salvando, setSalvando] = useState(false);
   const [filtroAlertas, setFiltroAlertas] = useState(false);
 
+  // Filtros de pesquisa
+  const [filtros, setFiltros] = useState({ busca: '', tamanho: '', cor: '', genero: '' });
+
   // Estados de Modais
   const [modalCadastro, setModalCadastro] = useState(false);
   const [modalEdicao, setModalEdicao] = useState(null); // guarda o objeto de estoque em edição
@@ -223,10 +226,27 @@ export default function Estoque() {
     return '';
   };
 
+  // Opções únicas para filtros
+  const tamanhosDisponiveisEstoque = [...new Set(estoques.map((i) => i.tamanho_produto || i.tamanho).filter((v) => v !== undefined && v !== null && v !== ''))].sort((a, b) => Number(a) - Number(b));
+  const coresDisponiveisEstoque = [...new Set(estoques.map((i) => i.cor_produto || i.cor).filter(Boolean))].sort();
+  const generosDisponiveisEstoque = [...new Set(estoques.map((i) => i.genero_produto || i.genero).filter(Boolean))].sort();
+
+  const estoquesFiltrados = estoques.filter((item) => {
+    const nome = item.nome_produto || item.nome || '';
+    if (filtros.busca && !nome.toLowerCase().includes(filtros.busca.toLowerCase())) return false;
+    const tam = item.tamanho_produto || item.tamanho;
+    if (filtros.tamanho && String(tam) !== String(filtros.tamanho)) return false;
+    const cor = item.cor_produto || item.cor;
+    if (filtros.cor && (cor || '').toLowerCase() !== filtros.cor.toLowerCase()) return false;
+    const gen = item.genero_produto || item.genero;
+    if (filtros.genero && gen !== filtros.genero) return false;
+    return true;
+  });
+
   // Lista de estoques filtrada caso o botão "Ver Alertas" esteja ativo
-  const estoquesExibidos = filtroAlertas
-    ? estoques.filter((item) => Number(item.quantidade) <= 5)
-    : estoques;
+  const estoquesExibidos = (filtroAlertas
+    ? estoquesFiltrados.filter((item) => Number(item.quantidade) <= 5)
+    : estoquesFiltrados);
 
   return (
     <div className="container-fluid py-3">
@@ -242,7 +262,61 @@ export default function Estoque() {
       <PageHeader
         title="Controle de Estoque"
         subtitle="Gerencie as quantidades em estoque de cada produto"
-      >
+        linha={false}
+      />
+
+      {/* Filtros e ações */}
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div className="d-flex gap-2 align-items-center flex-wrap">
+          <input
+            type="text"
+            className="form-control"
+            style={{ width: '200px' }}
+            placeholder="Buscar..."
+            value={filtros.busca}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, busca: e.target.value }))}
+          />
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.tamanho}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, tamanho: e.target.value }))}
+          >
+            <option value="">Tamanho</option>
+            {tamanhosDisponiveisEstoque.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.cor}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, cor: e.target.value }))}
+          >
+            <option value="">Cor</option>
+            {coresDisponiveisEstoque.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.genero}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, genero: e.target.value }))}
+          >
+            <option value="">Gênero</option>
+            {generosDisponiveisEstoque.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setFiltros({ busca: '', tamanho: '', cor: '', genero: '' })}
+          >
+            Limpar
+          </button>
+        </div>
         <div className="d-flex gap-2">
           <button
             className="btn btn-danger text-white shadow-sm"
@@ -256,7 +330,9 @@ export default function Estoque() {
             <i className="bi bi-box-arrow-in-down me-1"></i> Registrar entrada
           </button>
         </div>
-      </PageHeader>
+      </div>
+
+      <hr className="mt-0" />
 
       {/* Alerta de Erro de Conexão/API */}
       {erro && (
@@ -296,7 +372,7 @@ export default function Estoque() {
                   <thead className="table-light">
                     <tr>
                       <th>Produto</th>
-                      <th className="text-center">Tam.</th>
+                      <th className="text-center">Tamanho</th>
                       <th>Cor</th>
                       <th>Gênero</th>
                       <th className="text-center">Qtd.</th>

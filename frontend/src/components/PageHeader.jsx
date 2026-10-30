@@ -5,6 +5,7 @@ const PageHeader = ({
   titulo = '',
   subtitulo = '',
   children = null,
+  linha = true,
 }) => {
   return (
     <>
@@ -15,7 +16,7 @@ const PageHeader = ({
         </div>
         <div>{children}</div>
       </div>
-      <hr className="mt-0" />
+      {linha && <hr className="mt-0" />}
     </>
   );
 };
