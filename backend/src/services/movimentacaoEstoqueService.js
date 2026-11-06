@@ -61,7 +61,7 @@ class MovimentacaoEstoqueService {
       throw { status: 404, mensagem: 'Produto não encontrado' };
     }
 
-    const estoque = await estoqueRepo.buscarPorProduto(id_produto);
+    let estoque = await estoqueRepo.buscarPorProduto(id_produto);
     if (!estoque) {
       if (tipo === 'entrada') {
         await estoqueRepo.criar({ id_produto, quantidade: 0 });

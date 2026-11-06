@@ -59,6 +59,13 @@ CREATE TABLE IF NOT EXISTS venda (
     data_venda DATETIME DEFAULT CURRENT_TIMESTAMP,
     valor_total DECIMAL(10,2) NOT NULL,
     forma_pagamento VARCHAR(50),
+    nome_comprador VARCHAR(255),
+    cnpj VARCHAR(20),
+    endereco VARCHAR(500),
+    data_pedido DATE,
+    data_entrega_prevista DATE,
+    status_pagamento VARCHAR(50) NOT NULL DEFAULT 'pendente',
+    status_entrega VARCHAR(50) NOT NULL DEFAULT 'pendente',
     FOREIGN KEY (id_funcionario) REFERENCES funcionario(id_funcionario)
 );
 
