@@ -396,15 +396,6 @@ export default function Funcionarios() {
                               >
                                 Editar
                               </button>
-
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setConfirmarDelete(func)}
-                                title="Excluir funcionário"
-                              >
-                                Excluir
-                              </button>
                             </div>
                           )}
                         </td>
