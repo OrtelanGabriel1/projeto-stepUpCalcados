@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createResourceService } from '../services/resourceService';
 import { formatarData } from '../utils';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import PageHeader from '../components/PageHeader';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
@@ -12,9 +14,11 @@ const produtoService = createResourceService('produto');
 
 // Estados iniciais dos formulários
 const formCadastroInicial = { id_produto: '', quantidade: '' };
-const formEdicaoInicial = { quantidade: '' };
+const formEdicaoInicial = { quantidade: '', motivo: '' };
 
 export default function Estoque() {
+  const { funcionario } = useAuth();
+  const podeRegistrarEntrada = String(funcionario?.tipo_funcionario || '').toLowerCase() !== 'vendedor';
   // Estados de Dados
   const [estoques, setEstoques] = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -24,6 +28,9 @@ export default function Estoque() {
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [filtroAlertas, setFiltroAlertas] = useState(false);
+
+  // Filtros de pesquisa
+  const [filtros, setFiltros] = useState({ busca: '', tamanho: '', cor: '', genero: '' });
 
   // Estados de Modais
   const [modalCadastro, setModalCadastro] = useState(false);
@@ -79,10 +86,8 @@ export default function Estoque() {
     carregarDados();
   }, []);
 
-  // Produtos que ainda NÃO possuem registro na tabela de estoque
-  const produtosDisponiveis = produtos.filter(
-    (prod) => !estoques.some((est) => Number(est.id_produto) === Number(prod.id_produto))
-  );
+  // Produtos disponíveis para entrada de estoque (todos os produtos cadastrados)
+  const produtosDisponiveis = produtos;
 
   // Abertura de Modais
   const handleAbrirModalCadastro = () => {
@@ -93,45 +98,52 @@ export default function Estoque() {
     setModalCadastro(true);
   };
 
-  const handleAbrirModalEdicao = (itemEstoque) => {
+  const handleAbrirModalAjuste = (itemEstoque) => {
     setModalEdicao(itemEstoque);
-    setFormEdicao({ quantidade: itemEstoque.quantidade });
+    setFormEdicao({ quantidade: itemEstoque.quantidade, motivo: '' });
   };
 
-  // Salvar Novo Registro de Estoque
+  // Salvar Entrada de Produto no Estoque
   const handleSalvarCadastro = async (e) => {
     e.preventDefault();
 
     if (!formCadastro.id_produto) {
-      exibirToast('Selecione um produto para registrar o estoque.', 'danger');
+      exibirToast('Selecione um produto para registrar a entrada.', 'danger');
       return;
     }
 
     const qtd = parseInt(formCadastro.quantidade, 10);
-    if (isNaN(qtd) || qtd < 0) {
-      exibirToast('A quantidade deve ser um número maior ou igual a zero.', 'danger');
+    if (isNaN(qtd) || qtd <= 0) {
+      exibirToast('A quantidade deve ser um número maior que zero.', 'danger');
       return;
     }
 
     setSalvando(true);
     try {
-      await estoqueService.criar({
-        id_produto: parseInt(formCadastro.id_produto, 10),
-        quantidade: qtd
-      });
-      exibirToast('Estoque registrado com sucesso!', 'success');
+      const payload = {
+        id_produto: Number(formCadastro.id_produto),
+        id_funcionario: funcionario?.id_funcionario ? Number(funcionario.id_funcionario) : null,
+        tipo: 'entrada',
+        quantidade: qtd,
+        motivo: 'Entrada de estoque'
+      };
+
+      const res = await api.post('/movimentacao-estoque', payload);
+      const msg = res.data?.mensagem || res.mensagem || 'Entrada registrada com sucesso!';
+      exibirToast(msg, 'success');
+
       setModalCadastro(false);
       setFormCadastro(formCadastroInicial);
       await carregarDados();
     } catch (err) {
-      const msg = err.response?.data?.mensagem || 'Erro ao cadastrar estoque.';
+      const msg = err.response?.data?.mensagem || 'Erro ao registrar entrada de estoque.';
       exibirToast(msg, 'danger');
     } finally {
       setSalvando(false);
     }
   };
 
-  // Salvar Atualização de Quantidade
+  // Salvar Ajuste de Quantidade
   const handleSalvarEdicao = async (e) => {
     e.preventDefault();
 
@@ -141,16 +153,30 @@ export default function Estoque() {
       return;
     }
 
+    if (!formEdicao.motivo || !formEdicao.motivo.trim()) {
+      exibirToast('Informe uma nota justificando o ajuste.', 'danger');
+      return;
+    }
+
     setSalvando(true);
     try {
-      const idEstoque = modalEdicao.id_estoque || modalEdicao.id;
-      await estoqueService.atualizar(idEstoque, { quantidade: qtd });
-      exibirToast('Quantidade em estoque atualizada com sucesso!', 'success');
+      const payload = {
+        id_produto: Number(modalEdicao.id_produto),
+        id_funcionario: funcionario?.id_funcionario ? Number(funcionario.id_funcionario) : null,
+        tipo: 'ajuste',
+        quantidade: qtd,
+        motivo: formEdicao.motivo.trim()
+      };
+
+      const res = await api.post('/movimentacao-estoque', payload);
+      const msg = res.data?.mensagem || res.mensagem || 'Ajuste registrado com sucesso!';
+      exibirToast(msg, 'success');
+
       setModalEdicao(null);
       setFormEdicao(formEdicaoInicial);
       await carregarDados();
     } catch (err) {
-      const msg = err.response?.data?.mensagem || 'Erro ao atualizar quantidade em estoque.';
+      const msg = err.response?.data?.mensagem || 'Erro ao registrar ajuste de estoque.';
       exibirToast(msg, 'danger');
     } finally {
       setSalvando(false);
@@ -201,10 +227,27 @@ export default function Estoque() {
     return '';
   };
 
+  // Opções únicas para filtros
+  const tamanhosDisponiveisEstoque = [...new Set(estoques.map((i) => i.tamanho_produto || i.tamanho).filter((v) => v !== undefined && v !== null && v !== ''))].sort((a, b) => Number(a) - Number(b));
+  const coresDisponiveisEstoque = [...new Set(estoques.map((i) => i.cor_produto || i.cor).filter(Boolean))].sort();
+  const generosDisponiveisEstoque = [...new Set(estoques.map((i) => i.genero_produto || i.genero).filter(Boolean))].sort();
+
+  const estoquesFiltrados = estoques.filter((item) => {
+    const nome = item.nome_produto || item.nome || '';
+    if (filtros.busca && !nome.toLowerCase().includes(filtros.busca.toLowerCase())) return false;
+    const tam = item.tamanho_produto || item.tamanho;
+    if (filtros.tamanho && String(tam) !== String(filtros.tamanho)) return false;
+    const cor = item.cor_produto || item.cor;
+    if (filtros.cor && (cor || '').toLowerCase() !== filtros.cor.toLowerCase()) return false;
+    const gen = item.genero_produto || item.genero;
+    if (filtros.genero && gen !== filtros.genero) return false;
+    return true;
+  });
+
   // Lista de estoques filtrada caso o botão "Ver Alertas" esteja ativo
-  const estoquesExibidos = filtroAlertas
-    ? estoques.filter((item) => Number(item.quantidade) <= 5)
-    : estoques;
+  const estoquesExibidos = (filtroAlertas
+    ? estoquesFiltrados.filter((item) => Number(item.quantidade) <= 5)
+    : estoquesFiltrados);
 
   return (
     <div className="container-fluid py-3">
@@ -220,21 +263,79 @@ export default function Estoque() {
       <PageHeader
         title="Controle de Estoque"
         subtitle="Gerencie as quantidades em estoque de cada produto"
-      >
+        linha={false}
+      />
+
+      {/* Filtros e ações */}
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div className="d-flex gap-2 align-items-center flex-wrap">
+          <input
+            type="text"
+            className="form-control"
+            style={{ width: '200px' }}
+            placeholder="Buscar..."
+            value={filtros.busca}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, busca: e.target.value }))}
+          />
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.tamanho}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, tamanho: e.target.value }))}
+          >
+            <option value="">Tamanho</option>
+            {tamanhosDisponiveisEstoque.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.cor}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, cor: e.target.value }))}
+          >
+            <option value="">Cor</option>
+            {coresDisponiveisEstoque.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.genero}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, genero: e.target.value }))}
+          >
+            <option value="">Gênero</option>
+            {generosDisponiveisEstoque.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setFiltros({ busca: '', tamanho: '', cor: '', genero: '' })}
+          >
+            Limpar
+          </button>
+        </div>
         <div className="d-flex gap-2">
           <button
-            className={`btn ${filtroAlertas ? 'btn-warning' : 'btn-outline-warning'} shadow-sm`}
+            className="btn btn-danger text-white shadow-sm"
             onClick={() => setFiltroAlertas(!filtroAlertas)}
             title="Filtrar produtos com quantidade ≤ 5"
           >
             <i className="bi bi-exclamation-triangle-fill me-1"></i>
             {filtroAlertas ? 'Exibindo Alertas (≤ 5)' : 'Ver Alertas'}
           </button>
+        {podeRegistrarEntrada && (
           <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCadastro}>
-            <i className="bi bi-plus-lg me-1"></i> + Registrar Estoque
+            <i className="bi bi-box-arrow-in-down me-1"></i> Registrar entrada
           </button>
+        )}
         </div>
-      </PageHeader>
+      </div>
+
+      <hr className="mt-0" />
 
       {/* Alerta de Erro de Conexão/API */}
       {erro && (
@@ -274,7 +375,7 @@ export default function Estoque() {
                   <thead className="table-light">
                     <tr>
                       <th>Produto</th>
-                      <th className="text-center">Tam.</th>
+                      <th className="text-center">Tamanho</th>
                       <th>Cor</th>
                       <th>Gênero</th>
                       <th className="text-center">Qtd.</th>
@@ -301,18 +402,18 @@ export default function Estoque() {
                           </td>
                           <td className="text-center">{renderBadgeQuantidade(item.quantidade)}</td>
                           <td className="text-muted small">{formatarData(dataAtualizacao)}</td>
-                          <td className="text-center">
-                            <button
+                            <td className="text-center">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-warning text-dark me-2"
+                                title="Ajustar quantidade"
+                                onClick={() => handleAbrirModalAjuste(item)}
+                              >
+                                Ajuste
+                              </button>
+                              <button
                               type="button"
-                              className="btn btn-outline-info me-2"
-                              title="Editar quantidade"
-                              onClick={() => handleAbrirModalEdicao(item)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
+                               className="btn btn-sm btn-outline-danger"
                               title="Excluir registro"
                               onClick={() => setConfirmarDelete(item)}
                             >
@@ -333,16 +434,16 @@ export default function Estoque() {
       {/* Modal de CADASTRO ("Registrar Estoque") */}
       <Modal
         show={modalCadastro}
-        title="Registrar Estoque"
+        title="Registrar Entrada de Produto no Estoque"
         onClose={() => !salvando && setModalCadastro(false)}
       >
         <form onSubmit={handleSalvarCadastro}>
-          {produtosDisponiveis.length === 0 ? (
-            <div className="alert alert-info mb-3">
-              <i className="bi bi-info-circle me-2"></i>
-              Todos os produtos cadastrados já possuem registro de estoque.
-            </div>
-          ) : (
+            {produtosDisponiveis.length === 0 ? (
+              <div className="alert alert-info mb-3">
+                <i className="bi bi-info-circle me-2"></i>
+                Nenhum produto cadastrado.
+              </div>
+            ) : (
             <div className="mb-3">
               <label className="form-label fw-semibold">
                 Produto <span className="text-danger">*</span>
@@ -364,7 +465,7 @@ export default function Estoque() {
 
           <div className="mb-4">
             <label className="form-label fw-semibold">
-              Quantidade Inicial <span className="text-danger">*</span>
+              Quantidade <span className="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -408,7 +509,7 @@ export default function Estoque() {
       {/* Modal de EDIÇÃO ("Atualizar Quantidade") */}
       <Modal
         show={!!modalEdicao}
-        title="Atualizar Quantidade"
+        title="Ajustar Quantidade"
         onClose={() => !salvando && setModalEdicao(null)}
       >
         <form onSubmit={handleSalvarEdicao}>
@@ -429,7 +530,21 @@ export default function Estoque() {
               min="0"
               placeholder="Ex: 20"
               value={formEdicao.quantidade}
-              onChange={(e) => setFormEdicao({ quantidade: e.target.value })}
+              onChange={(e) => setFormEdicao((prev) => ({ ...prev, quantidade: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label fw-semibold">
+              Nota de Justificativa <span className="text-danger">*</span>
+            </label>
+            <textarea
+              className="form-control"
+              rows="3"
+              placeholder="Ex: Correção de inventário..."
+              value={formEdicao.motivo || ''}
+              onChange={(e) => setFormEdicao((prev) => ({ ...prev, motivo: e.target.value }))}
               required
             />
           </div>

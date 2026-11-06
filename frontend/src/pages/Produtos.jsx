@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createResourceService } from '../services/resourceService';
 import { formatarMoeda } from '../utils';
+import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
@@ -23,6 +24,8 @@ const formInicial = {
 };
 
 export default function Produtos() {
+  const { funcionario } = useAuth();
+  const podeCadastrarProduto = String(funcionario?.tipo_funcionario || '').toLowerCase() !== 'vendedor';
   // Estados de Dados
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -31,6 +34,15 @@ export default function Produtos() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
+
+  // Filtros de pesquisa
+  const [filtros, setFiltros] = useState({
+    busca: '',
+    categoria: '',
+    tamanho: '',
+    cor: '',
+    genero: ''
+  });
 
   // Estados de Modais
   const [modalAberto, setModalAberto] = useState(false);
@@ -241,6 +253,23 @@ export default function Produtos() {
     return cat ? cat.nome || cat.nome_categoria : null;
   };
 
+  // Opções únicas para filtros
+  const tamanhosDisponiveis = [...new Set(produtos.map((p) => p.tamanho).filter((v) => v !== undefined && v !== null && v !== ''))].sort((a, b) => Number(a) - Number(b));
+  const coresDisponiveis = [...new Set(produtos.map((p) => p.cor).filter(Boolean))].sort();
+  const generosDisponiveis = [...new Set(produtos.map((p) => p.genero).filter(Boolean))].sort();
+
+  // Lista de produtos filtrada
+  const produtosFiltrados = produtos.filter((produto) => {
+    if (filtros.busca && !(produto.nome || '').toLowerCase().includes(filtros.busca.toLowerCase())) return false;
+    if (filtros.categoria && String(produto.id_categoria) !== String(filtros.categoria)) return false;
+    if (filtros.tamanho && String(produto.tamanho) !== String(filtros.tamanho)) return false;
+    if (filtros.cor && (produto.cor || '').toLowerCase() !== filtros.cor.toLowerCase()) return false;
+    if (filtros.genero && produto.genero !== filtros.genero) return false;
+    return true;
+  });
+
+  const limparFiltros = () => setFiltros({ busca: '', categoria: '', tamanho: '', cor: '', genero: '' });
+
   return (
     <div className="container-fluid py-3">
       {/* Toast de Notificação */}
@@ -252,11 +281,77 @@ export default function Produtos() {
       />
 
       {/* Cabeçalho da Página */}
-      <PageHeader title="Produtos" subtitle="Gestão do catálogo de calçados">
-        <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCriar}>
-          <i className="bi bi-plus-lg me-1"></i> + Novo Produto
-        </button>
-      </PageHeader>
+      <PageHeader title="Produtos" subtitle="Gestão do catálogo de calçados" linha={false} />
+
+      {/* Filtros e ações */}
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div className="d-flex gap-2 align-items-center flex-wrap">
+          <input
+            type="text"
+            className="form-control"
+            style={{ width: '200px' }}
+            placeholder="Buscar..."
+            value={filtros.busca}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, busca: e.target.value }))}
+          />
+          <select
+            className="form-select"
+            style={{ width: '180px' }}
+            value={filtros.categoria}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, categoria: e.target.value }))}
+          >
+            <option value="">Categoria</option>
+            {categorias.map((cat) => (
+              <option key={cat.id_categoria} value={cat.id_categoria}>
+                {cat.nome || cat.nome_categoria}
+              </option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.tamanho}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, tamanho: e.target.value }))}
+          >
+            <option value="">Tamanho</option>
+            {tamanhosDisponiveis.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.cor}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, cor: e.target.value }))}
+          >
+            <option value="">Cor</option>
+            {coresDisponiveis.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ width: '130px' }}
+            value={filtros.genero}
+            onChange={(e) => setFiltros((prev) => ({ ...prev, genero: e.target.value }))}
+          >
+            <option value="">Gênero</option>
+            {generosDisponiveis.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-outline-secondary" onClick={limparFiltros}>
+            Limpar
+          </button>
+        </div>
+        {podeCadastrarProduto && (
+          <button className="btn btn-primary shadow-sm" onClick={handleAbrirModalCriar}>
+            <i className="bi bi-plus-lg me-1"></i> + Novo Produto
+          </button>
+        )}
+      </div>
+
+      <hr className="mt-0" />
 
       {/* Exibição de Erro Global de Carregamento */}
       {erro && (
@@ -271,22 +366,26 @@ export default function Produtos() {
       {loading ? (
         <Loading texto="Carregando produtos do catálogo..." />
       ) : (
-        <div className="card border-0 shadow-sm">
-          <div className="card-body p-0">
-            {produtos.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                <i className="bi bi-box-seam display-4 d-block mb-3 text-secondary"></i>
-                <p className="mb-0">Nenhum produto cadastrado até o momento.</p>
-              </div>
-            ) : (
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-0">
+              {produtos.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <i className="bi bi-box-seam display-4 d-block mb-3 text-secondary"></i>
+                  <p className="mb-0">Nenhum produto cadastrado até o momento.</p>
+                </div>
+              ) : produtosFiltrados.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <i className="bi bi-search display-4 d-block mb-3 text-secondary"></i>
+                  <p className="mb-0">Nenhum produto encontrado para os filtros selecionados.</p>
+                </div>
+              ) : (
               <div className="table-responsive">
                 <table className="table table-hover table-striped align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: '60px' }}>#</th>
                       <th>Nome</th>
                       <th>Categoria</th>
-                      <th className="text-center">Tam.</th>
+                      <th className="text-center">Tamanho</th>
                       <th>Cor</th>
                       <th>Gênero</th>
                       <th className="text-end">Preço Custo</th>
@@ -295,11 +394,10 @@ export default function Produtos() {
                     </tr>
                   </thead>
                   <tbody>
-                    {produtos.map((produto, index) => {
+                    {produtosFiltrados.map((produto, index) => {
                       const nomeCat = obterNomeCategoria(produto);
                       return (
                         <tr key={produto.id_produto || index}>
-                          <td className="fw-semibold text-muted">{produto.id_produto || index + 1}</td>
                           <td className="fw-bold">{produto.nome}</td>
                           <td>
                             {nomeCat ? (
@@ -324,7 +422,7 @@ export default function Produtos() {
                           <td className="text-center">
                             <button
                               type="button"
-                              className="btn btn-outline-info me-2"
+                              className="btn btn-sm btn-outline-info me-2"
                               title="Editar produto"
                               onClick={() => handleAbrirModalEditar(produto)}
                             >
@@ -332,7 +430,7 @@ export default function Produtos() {
                             </button>
                             <button
                               type="button"
-                              className="btn btn-outline-danger"
+                              className="btn btn-sm btn-outline-danger"
                               title="Excluir produto"
                               onClick={() => setConfirmarDelete(produto)}
                             >

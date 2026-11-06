@@ -52,6 +52,10 @@ class MovimentacaoEstoqueService {
       throw { status: 400, mensagem: 'quantidade deve ser um número inteiro' };
     }
 
+    if (tipo === 'ajuste' && (!motivo || !String(motivo).trim())) {
+      throw { status: 400, mensagem: 'motivo (justificativa) é obrigatório para ajuste' };
+    }
+
     const produto = await produtoRepo.buscarPorId(id_produto);
     if (!produto) {
       throw { status: 404, mensagem: 'Produto não encontrado' };
@@ -59,10 +63,15 @@ class MovimentacaoEstoqueService {
 
     const estoque = await estoqueRepo.buscarPorProduto(id_produto);
     if (!estoque) {
-      throw {
-        status: 404,
-        mensagem: 'Registro de estoque não encontrado. Cadastre o estoque inicial antes de movimentar.'
-      };
+      if (tipo === 'entrada') {
+        await estoqueRepo.criar({ id_produto, quantidade: 0 });
+        estoque = await estoqueRepo.buscarPorProduto(id_produto);
+      } else {
+        throw {
+          status: 404,
+          mensagem: 'Registro de estoque não encontrado. Cadastre o estoque inicial antes de movimentar.'
+        };
+      }
     }
 
     // Saída não pode deixar negativo
@@ -104,11 +113,15 @@ class MovimentacaoEstoqueService {
         );
       }
 
-      // Grava no histórico
-      await movimentacaoRepo.registrar(
-        { id_produto, id_funcionario, tipo, quantidade: qtdRegistro, motivo },
-        connection
-      );
+       // Grava no histórico
+       const motivoFinal = tipo === 'ajuste'
+         ? (motivo ? `${motivo} (de ${estoque.quantidade} para ${quantidade})` : `de ${estoque.quantidade} para ${quantidade}`)
+         : motivo;
+
+       await movimentacaoRepo.registrar(
+         { id_produto, id_funcionario, tipo, quantidade: qtdRegistro, motivo: motivoFinal },
+         connection
+       );
 
       await connection.commit();
 

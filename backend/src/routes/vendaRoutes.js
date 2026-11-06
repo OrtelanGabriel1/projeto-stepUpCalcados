@@ -11,5 +11,6 @@ router.get('/:id', vendaController.buscarPorId);
 router.post('/', autorizar('vendedor', 'gerente'), vendaController.registrar);
 
 router.patch('/:id/cancelar', vendaController.cancelar);
+router.patch('/:id/status', vendaController.atualizarStatus);
 
 module.exports = router;

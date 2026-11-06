@@ -34,12 +34,34 @@ class VendaRepository {
   }
 
   async criar(venda, connection) {
-    const { id_funcionario, forma_pagamento, valor_total } = venda;
+    const {
+      id_funcionario,
+      forma_pagamento,
+      valor_total,
+      nome_comprador,
+      cnpj,
+      endereco,
+      data_pedido,
+      data_entrega_prevista,
+      status_pagamento,
+      status_entrega,
+    } = venda;
     const conn = connection || pool;
     const [result] = await conn.query(
-      `INSERT INTO venda (id_funcionario, forma_pagamento, valor_total)
-       VALUES (?, ?, ?)`,
-      [id_funcionario, forma_pagamento, valor_total]
+      `INSERT INTO venda (id_funcionario, forma_pagamento, valor_total, nome_comprador, cnpj, endereco, data_pedido, data_entrega_prevista, status_pagamento, status_entrega)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id_funcionario,
+        forma_pagamento,
+        valor_total,
+        nome_comprador || null,
+        cnpj || null,
+        endereco || null,
+        data_pedido || null,
+        data_entrega_prevista || null,
+        status_pagamento || 'pendente',
+        status_entrega || 'pendente',
+      ]
     );
     return result.insertId;
   }
@@ -65,6 +87,26 @@ class VendaRepository {
     return result.affectedRows > 0;
   }
 
+  async atualizarStatus(id, dados, connection) {
+    const conn = connection || pool;
+    const campos = [];
+    const valores = [];
+    if (dados.status_pagamento !== undefined) {
+      campos.push('status_pagamento = ?');
+      valores.push(dados.status_pagamento);
+    }
+    if (dados.status_entrega !== undefined) {
+      campos.push('status_entrega = ?');
+      valores.push(dados.status_entrega);
+    }
+    if (campos.length === 0) return false;
+    valores.push(id);
+    const [result] = await conn.query(
+      `UPDATE venda SET ${campos.join(', ')} WHERE id_venda = ?`,
+      valores
+    );
+    return result.affectedRows > 0;
+  }
   async getConnection() {
     return pool.getConnection();
   }

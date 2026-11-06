@@ -147,7 +147,7 @@ export default function Movimentacoes() {
         )
       case 'ajuste':
         return (
-          <span className="badge bg-info text-dark d-inline-flex align-items-center gap-1">
+          <span className="badge bg-warning text-dark d-inline-flex align-items-center gap-1">
             <i className="bi bi-arrows-collapse"></i> Ajuste
           </span>
         )
