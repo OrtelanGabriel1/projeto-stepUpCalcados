@@ -11,8 +11,26 @@ import PageHeader from '../components/PageHeader'
 const vendaService = createResourceService('venda')
 const produtoService = createResourceService('produto')
 
-// Cargos que podem registrar vendas (todos os demais apenas visualizam)
 const CARGOS_PODEM_VENDER = ['vendedor', 'gerente']
+
+const formatarCnpj = (valor) => {
+  const digits = String(valor || '').replace(/\D/g, '').slice(0, 14)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
+}
+
+const statusPagamentoLabel = (status) =>
+  String(status || '').toLowerCase() === 'pago' ? 'Concluído' : 'Pendente'
+
+const statusEntregaLabel = (status) => {
+  const s = String(status || '').toLowerCase()
+  if (s === 'entregue') return 'Concluído'
+  if (s === 'em_transito' || s === 'em transito') return 'Em trânsito'
+  return 'Pendente'
+}
 
 export default function Vendas() {
   const { funcionario } = useAuth()
@@ -26,7 +44,12 @@ export default function Vendas() {
   const [erro, setErro] = useState(null)
   const [toast, setToast] = useState({ mensagem: '', tipo: '' })
 
+  const [modalConfirmarPagamento, setModalConfirmarPagamento] = useState(false)
+  const [modalConfirmarEntrega, setModalConfirmarEntrega] = useState(false)
   const [modalNovaVenda, setModalNovaVenda] = useState(false)
+  const [vendaSelecionadaPagamento, setVendaSelecionadaPagamento] = useState('')
+  const [vendaSelecionadaEntrega, setVendaSelecionadaEntrega] = useState('')
+  const [etapa, setEtapa] = useState(1)
   const [modalDetalhes, setModalDetalhes] = useState(null)
   const [confirmarCancelar, setConfirmarCancelar] = useState(null)
   const [salvando, setSalvando] = useState(false)
@@ -34,7 +57,12 @@ export default function Vendas() {
   const [form, setForm] = useState({
     id_funcionario: funcionario?.id_funcionario || '',
     forma_pagamento: '',
-    itens: []
+    itens: [],
+    nome_comprador: '',
+    cnpj: '',
+    endereco: '',
+    data_pedido: '',
+    data_entrega_prevista: ''
   })
 
   const [itemAtual, setItemAtual] = useState({
@@ -81,9 +109,15 @@ export default function Vendas() {
     setForm({
       id_funcionario: funcionario?.id_funcionario || '',
       forma_pagamento: '',
-      itens: []
+      itens: [],
+      nome_comprador: '',
+      cnpj: '',
+      endereco: '',
+      data_pedido: new Date().toISOString().slice(0, 10),
+      data_entrega_prevista: ''
     })
     setItemAtual({ id_produto: '', quantidade: 1 })
+    setEtapa(1)
     setModalNovaVenda(true)
   }
 
@@ -151,18 +185,50 @@ export default function Vendas() {
     return form.itens.reduce((acc, item) => acc + item.quantidade * item.preco_venda, 0)
   }
 
-  const handleRegistrarVenda = async (e) => {
-    e.preventDefault()
-
-    if (!form.forma_pagamento) {
-      setToast({ mensagem: 'Selecione a forma de pagamento.', tipo: 'danger' })
-      return
-    }
-
+  const validarEtapa1 = () => {
     if (form.itens.length === 0) {
       setToast({ mensagem: 'Adicione pelo menos 1 item à venda.', tipo: 'danger' })
-      return
+      return false
     }
+    return true
+  }
+
+  const validarEtapa2 = () => {
+    if (!form.nome_comprador.trim()) {
+      setToast({ mensagem: 'Informe o nome do comprador.', tipo: 'danger' })
+      return false
+    }
+    if (!form.cnpj.trim() || form.cnpj.replace(/\D/g, '').length < 14) {
+      setToast({ mensagem: 'Informe um CNPJ válido.', tipo: 'danger' })
+      return false
+    }
+    if (!form.endereco.trim()) {
+      setToast({ mensagem: 'Informe o endereço.', tipo: 'danger' })
+      return false
+    }
+    if (!form.data_pedido) {
+      setToast({ mensagem: 'Informe a data do pedido.', tipo: 'danger' })
+      return false
+    }
+    if (!form.data_entrega_prevista) {
+      setToast({ mensagem: 'Informe a data prevista de entrega.', tipo: 'danger' })
+      return false
+    }
+    return true
+  }
+
+  const handleAvancar = () => {
+    if (etapa === 1 && !validarEtapa1()) return
+    if (etapa === 2 && !validarEtapa2()) return
+    setEtapa((prev) => Math.min(prev + 1, 3))
+  }
+
+  const handleVoltar = () => {
+    setEtapa((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleRegistrarVenda = async (e) => {
+    if (e) e.preventDefault()
 
     setSalvando(true)
 
@@ -172,7 +238,14 @@ export default function Vendas() {
         itens: form.itens.map((item) => ({
           id_produto: Number(item.id_produto),
           quantidade: Number(item.quantidade)
-        }))
+        })),
+        nome_comprador: form.nome_comprador.trim(),
+        cnpj: form.cnpj,
+        endereco: form.endereco.trim(),
+        data_pedido: form.data_pedido,
+        data_entrega_prevista: form.data_entrega_prevista,
+        status_pagamento: 'pendente',
+        status_entrega: 'pendente'
       }
 
       const res = await vendaService.criar(payload)
@@ -186,6 +259,26 @@ export default function Vendas() {
       setToast({ mensagem: msgErro, tipo: 'danger' })
     } finally {
       setSalvando(false)
+    }
+  }
+
+  const marcarComoPago = async (id) => {
+    try {
+      await api.patch(`/venda/${id}/status`, { status_pagamento: 'pago' })
+      setToast({ mensagem: 'Pagamento marcado como concluído.', tipo: 'success' })
+      carregarDados()
+    } catch (err) {
+      setToast({ mensagem: err.response?.data?.mensagem || err.message || 'Erro ao atualizar pagamento.', tipo: 'danger' })
+    }
+  }
+
+  const marcarComoEntregue = async (id) => {
+    try {
+      await api.patch(`/venda/${id}/status`, { status_entrega: 'entregue' })
+      setToast({ mensagem: 'Entrega marcada como concluída.', tipo: 'success' })
+      carregarDados()
+    } catch (err) {
+      setToast({ mensagem: err.response?.data?.mensagem || err.message || 'Erro ao atualizar entrega.', tipo: 'danger' })
     }
   }
 
@@ -203,9 +296,10 @@ export default function Vendas() {
     }
   }
 
-  const handleConfirmarCancelar = async () => {
-    if (!confirmarCancelar) return
-    const id = confirmarCancelar.id_venda || confirmarCancelar.id
+  const handleConfirmarCancelar = async (vendaParam) => {
+    const vendaAlvo = vendaParam || confirmarCancelar
+    if (!vendaAlvo) return
+    const id = vendaAlvo.id_venda || vendaAlvo.id
     setSalvando(true)
 
     try {
@@ -223,21 +317,23 @@ export default function Vendas() {
     }
   }
 
-  const renderBadgeFormaPagamento = (forma) => {
+  const renderFormaPagamento = (forma) => {
     const formaLower = forma?.toLowerCase() || ''
     switch (formaLower) {
       case 'dinheiro':
-        return <span className="badge bg-success">Dinheiro</span>
+        return 'Dinheiro'
       case 'pix':
-        return <span className="badge bg-info text-dark">Pix</span>
+        return 'Pix'
       case 'credito':
       case 'crédito':
-        return <span className="badge bg-primary">Crédito</span>
+        return 'Crédito'
       case 'debito':
       case 'débito':
-        return <span className="badge bg-secondary">Débito</span>
+        return 'Débito'
+      case 'boleto':
+        return 'Boleto'
       default:
-        return <span className="badge bg-dark">{forma}</span>
+        return forma || '-'
     }
   }
 
@@ -255,11 +351,19 @@ export default function Vendas() {
         titulo="Vendas"
         subtitulo="Registre e gerencie as vendas da loja"
       >
-        {podeRegistrarVenda && (
-          <button className="btn btn-primary shadow-sm" onClick={abrirModalNovaVenda}>
-            <i className="bi bi-plus-lg me-1"></i> Nova Venda
+        <div className="d-flex gap-2">
+          <button className="btn btn-outline-success shadow-sm" onClick={() => { setVendaSelecionadaPagamento(''); setModalConfirmarPagamento(true) }}>
+            Confirmar Pagamento
           </button>
-        )}
+          <button className="btn btn-outline-primary shadow-sm" onClick={() => { setVendaSelecionadaEntrega(''); setModalConfirmarEntrega(true) }}>
+            Confirmar Entrega
+          </button>
+          {podeRegistrarVenda && (
+            <button className="btn btn-primary shadow-sm" onClick={abrirModalNovaVenda}>
+              <i className="bi bi-plus-lg me-1"></i> Nova Venda
+            </button>
+          )}
+        </div>
       </PageHeader>
 
       {erro && (
@@ -276,17 +380,19 @@ export default function Vendas() {
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
               <tr>
-                <th>Funcionário</th>
+                <th>Comprador</th>
                 <th>Data</th>
                 <th>Forma Pagamento</th>
                 <th>Total</th>
+                <th>Pagamento</th>
+                <th>Entrega</th>
                 <th className="text-end">Ações</th>
               </tr>
             </thead>
             <tbody>
               {vendas.length === 0 ? (
                 <tr>
-                    <td colSpan="5" className="text-center py-4 text-muted">
+                  <td colSpan="7" className="text-center py-4 text-muted">
                     Nenhuma venda encontrada.
                   </td>
                 </tr>
@@ -295,34 +401,74 @@ export default function Vendas() {
                   const id = venda.id_venda || venda.id
                   const status = (venda.status || '').toLowerCase()
                   const cancelada = status === 'cancelada'
+                  const paga = String(venda.status_pagamento || '').toLowerCase() === 'pago'
 
                   return (
                     <tr key={id} className={cancelada ? 'table-secondary text-muted' : ''}>
-                      <td>{venda.nome_funcionario || venda.funcionario?.nome || 'Sistema'}</td>
-                      <td>{formatarData(venda.data_venda || venda.created_at || venda.data)}</td>
-                      <td>{renderBadgeFormaPagamento(venda.forma_pagamento)}</td>
+                      <td>{venda.nome_comprador || venda.nome_funcionario || 'Sistema'}</td>
+                      <td>{formatarData(venda.data_venda || venda.data_pedido || venda.created_at || venda.data)}</td>
+                      <td>{renderFormaPagamento(venda.forma_pagamento)}</td>
                       <td className="fw-bold">{formatarMoeda(venda.valor_total || venda.total || 0)}</td>
+                      <td>
+                        {paga ? (
+                          <span className={`badge bg-success`}>
+                            {statusPagamentoLabel(venda.status_pagamento)}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-secondary"
+                            disabled={cancelada}
+                            onClick={() => marcarComoPago(id)}
+                            title="Marcar pagamento como pago"
+                          >
+                            {statusPagamentoLabel(venda.status_pagamento)}
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        {String(venda.status_entrega || '').toLowerCase() === 'entregue' ? (
+                          <span className={`badge bg-success`}>
+                            {statusEntregaLabel(venda.status_entrega)}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-secondary"
+                            disabled={cancelada}
+                            onClick={() => marcarComoEntregue(id)}
+                            title="Marcar entrega como entregue"
+                          >
+                            {statusEntregaLabel(venda.status_entrega)}
+                          </button>
+                        )}
+                      </td>
                       <td className="text-end">
                         <div className="d-inline-flex align-items-center">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-info me-2"
+                            onClick={() => handleVerDetalhes(id)}
+                            title="Ver detalhes da venda"
+                          >
+                            Detalhes
+                          </button>
+                          {!cancelada && !paga && (
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-info me-2"
-                              onClick={() => handleVerDetalhes(id)}
-                              title="Ver detalhes da venda"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => {
+                                if (window.confirm('Cancelar esta venda? O estoque será revertido.')) {
+                                  handleConfirmarCancelar(venda)
+                                }
+                              }}
+                              title="Cancelar venda"
+                              disabled={salvando}
                             >
-                              Detalhes
+                              Cancelar
                             </button>
-                            {!cancelada && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setConfirmarCancelar(venda)}
-                                title="Cancelar venda"
-                              >
-                                Cancelar
-                              </button>
-                            )}
-                          </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -335,44 +481,39 @@ export default function Vendas() {
 
       {modalNovaVenda && (
         <Modal
-          titulo="Registrar Nova Venda"
+          titulo="Nova Venda"
           show={modalNovaVenda}
           onClose={fecharModalNovaVenda}
           largura="720px"
         >
-          <form onSubmit={handleRegistrarVenda}>
-            <div className="mb-4">
-              <h6 className="fw-bold border-bottom pb-2">1. Forma de Pagamento</h6>
-              <div className="mb-3">
-                <label htmlFor="forma_pagamento" className="form-label fw-semibold">
-                  Forma de Pagamento *
-                </label>
-                <select
-                  id="forma_pagamento"
-                  name="forma_pagamento"
-                  className="form-select"
-                  value={form.forma_pagamento}
-                  onChange={(e) => setForm((prev) => ({ ...prev, forma_pagamento: e.target.value }))}
-                  required
-                >
-                  <option value="">Selecione...</option>
-                  <option value="dinheiro">Dinheiro</option>
-                  <option value="pix">Pix</option>
-                  <option value="credito">Cartão de Crédito</option>
-                  <option value="debito">Cartão de Débito</option>
-                </select>
+          <div className="mb-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <h6 className="fw-bold mb-0">Etapa {etapa} de 3</h6>
+              <div>
+                {etapa > 1 && (
+                  <button type="button" className="btn btn-sm btn-outline-secondary me-2" onClick={handleVoltar}>
+                    Voltar
+                  </button>
+                )}
+                {etapa < 3 && (
+                  <button type="button" className="btn btn-sm btn-primary" onClick={handleAvancar}>
+                    Avançar
+                  </button>
+                )}
               </div>
             </div>
+            <div className="progress mt-2" style={{ height: '6px' }}>
+              <div className="progress-bar" style={{ width: `${(etapa / 3) * 100}%` }}></div>
+            </div>
+          </div>
 
-            <div className="mb-4">
-              <h6 className="fw-bold border-bottom pb-2">2. Adicionar Itens</h6>
+          {etapa === 1 && (
+            <div>
+              <h6 className="fw-bold border-bottom pb-2">1. Inserção de Produtos</h6>
               <div className="row g-2 align-items-end mb-3">
                 <div className="col-md-5">
-                  <label htmlFor="select-produto" className="form-label fw-semibold small">
-                    Produto
-                  </label>
+                  <label className="form-label fw-semibold small">Produto</label>
                   <select
-                    id="select-produto"
                     className="form-select"
                     value={itemAtual.id_produto}
                     onChange={(e) => setItemAtual((prev) => ({ ...prev, id_produto: e.target.value }))}
@@ -386,12 +527,9 @@ export default function Vendas() {
                   </select>
                 </div>
                 <div className="col-md-3">
-                  <label htmlFor="input-qtd" className="form-label fw-semibold small">
-                    Qtd
-                  </label>
+                  <label className="form-label fw-semibold small">Qtd</label>
                   <input
                     type="number"
-                    id="input-qtd"
                     className="form-control"
                     min="1"
                     value={itemAtual.quantidade}
@@ -434,15 +572,15 @@ export default function Vendas() {
                           <td className="text-center">{item.quantidade}</td>
                           <td className="text-end">{formatarMoeda(item.preco_venda)}</td>
                           <td className="text-end">{formatarMoeda(item.quantidade * item.preco_venda)}</td>
-                            <td className="text-center">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleRemoverItem(item.id_produto)}
-                              >
-                                Remover
-                              </button>
-                            </td>
+                          <td className="text-center">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleRemoverItem(item.id_produto)}
+                            >
+                              Remover
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -454,25 +592,103 @@ export default function Vendas() {
                 Total: {formatarMoeda(calcularTotalForm())}
               </div>
             </div>
+          )}
 
-            <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={fecharModalNovaVenda}
-                disabled={salvando}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="btn btn-success"
-                disabled={salvando || form.itens.length === 0}
-              >
-                {salvando ? 'Registrando...' : 'Finalizar Venda'}
-              </button>
+          {etapa === 2 && (
+            <div>
+              <h6 className="fw-bold border-bottom pb-2">2. Informações do Comprador e Logística</h6>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Nome da Empresa / Nome Completo *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={form.nome_comprador}
+                  onChange={(e) => setForm((prev) => ({ ...prev, nome_comprador: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">CNPJ *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={form.cnpj}
+                  onChange={(e) => setForm((prev) => ({ ...prev, cnpj: formatarCnpj(e.target.value) }))}
+                  placeholder="00.000.000/0000-00"
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Endereço completo *</label>
+                <textarea
+                  className="form-control"
+                  rows="2"
+                  value={form.endereco}
+                  onChange={(e) => setForm((prev) => ({ ...prev, endereco: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="row g-2">
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Data do Pedido *</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.data_pedido}
+                    onChange={(e) => setForm((prev) => ({ ...prev, data_pedido: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Data Prevista de Entrega *</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.data_entrega_prevista}
+                    onChange={(e) => setForm((prev) => ({ ...prev, data_entrega_prevista: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
             </div>
-          </form>
+          )}
+
+          {etapa === 3 && (
+            <div>
+              <h6 className="fw-bold border-bottom pb-2">3. Forma de Pagamento e Finalização</h6>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Forma de Pagamento *</label>
+                <select
+                  className="form-select"
+                  value={form.forma_pagamento}
+                  onChange={(e) => setForm((prev) => ({ ...prev, forma_pagamento: e.target.value }))}
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  <option value="pix">Pix</option>
+                  <option value="credito">Cartão de Crédito</option>
+                  <option value="debito">Cartão de Débito</option>
+                  <option value="boleto">Boleto</option>
+                  <option value="dinheiro">Dinheiro</option>
+                </select>
+              </div>
+
+              <div className="text-end fw-bold fs-5 mb-3">
+                Total: {formatarMoeda(calcularTotalForm())}
+              </div>
+
+              <div className="d-flex justify-content-end pt-3 border-top">
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleRegistrarVenda}
+                  disabled={salvando || !form.forma_pagamento}
+                >
+                  {salvando ? 'Concluindo...' : 'Concluir Venda'}
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
@@ -485,16 +701,31 @@ export default function Vendas() {
           <div className="mb-3">
             <div className="row g-2 mb-2">
               <div className="col-6">
-                <strong>Funcionário:</strong> {modalDetalhes.nome_funcionario || modalDetalhes.funcionario?.nome || '-'}
+                <strong>Comprador:</strong> {modalDetalhes.nome_comprador || '-'}
               </div>
               <div className="col-6">
-                <strong>Data:</strong> {formatarData(modalDetalhes.data_venda || modalDetalhes.created_at || modalDetalhes.data)}
+                <strong>CNPJ:</strong> {modalDetalhes.cnpj || '-'}
+              </div>
+              <div className="col-12">
+                <strong>Endereço:</strong> {modalDetalhes.endereco || '-'}
               </div>
               <div className="col-6">
-                <strong>Forma de Pagamento:</strong> {renderBadgeFormaPagamento(modalDetalhes.forma_pagamento)}
+                <strong>Vendedor:</strong> {modalDetalhes.nome_funcionario || modalDetalhes.funcionario?.nome || '-'}
               </div>
               <div className="col-6">
-                <strong>Status:</strong> {modalDetalhes.status || 'Concluída'}
+                <strong>Data do Pedido:</strong> {formatarData(modalDetalhes.data_pedido || modalDetalhes.data_venda || modalDetalhes.created_at)}
+              </div>
+              <div className="col-6">
+                <strong>Entrega Prevista:</strong> {formatarData(modalDetalhes.data_entrega_prevista)}
+              </div>
+              <div className="col-6">
+                <strong>Forma de Pagamento:</strong> {renderFormaPagamento(modalDetalhes.forma_pagamento)}
+              </div>
+              <div className="col-6">
+                <strong>Status Pagamento:</strong> {statusPagamentoLabel(modalDetalhes.status_pagamento)}
+              </div>
+              <div className="col-6">
+                <strong>Status Entrega:</strong> {statusEntregaLabel(modalDetalhes.status_entrega)}
               </div>
             </div>
           </div>
@@ -535,7 +766,33 @@ export default function Vendas() {
             Total: {formatarMoeda(modalDetalhes.valor_total || modalDetalhes.total || 0)}
           </div>
 
-          <div className="d-flex justify-content-end pt-2 border-top">
+          <div className="d-flex justify-content-end pt-2 border-top gap-2">
+            {String(modalDetalhes.status_pagamento || '').toLowerCase() !== 'pago' && (
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={async () => {
+                  await marcarComoPago(modalDetalhes.id_venda || modalDetalhes.id)
+                  const res = await api.get(`/venda/${modalDetalhes.id_venda || modalDetalhes.id}`)
+                  setModalDetalhes(res.data?.dados || res.data || modalDetalhes)
+                }}
+              >
+                Marcar como Pago
+              </button>
+            )}
+            {String(modalDetalhes.status_entrega || '').toLowerCase() !== 'entregue' && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  await marcarComoEntregue(modalDetalhes.id_venda || modalDetalhes.id)
+                  const res = await api.get(`/venda/${modalDetalhes.id_venda || modalDetalhes.id}`)
+                  setModalDetalhes(res.data?.dados || res.data || modalDetalhes)
+                }}
+              >
+                Marcar como Entregue
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary"
@@ -547,35 +804,98 @@ export default function Vendas() {
         </Modal>
       )}
 
-      {confirmarCancelar && (
+      {modalConfirmarPagamento && (
         <Modal
-          titulo="Confirmar Cancelamento"
-          show={!!confirmarCancelar}
-          onClose={() => setConfirmarCancelar(null)}
+          titulo="Confirmar Pagamento"
+          show={modalConfirmarPagamento}
+          onClose={() => setModalConfirmarPagamento(false)}
         >
-          <p className="mb-3">
-            Cancelar a venda #{confirmarCancelar.id_venda || confirmarCancelar.id}? O estoque será revertido automaticamente.
-          </p>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Selecione a venda</label>
+            <select
+              className="form-select"
+              value={vendaSelecionadaPagamento}
+              onChange={(e) => setVendaSelecionadaPagamento(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {vendas
+                .filter((v) => String(v.status_pagamento || '').toLowerCase() !== 'pago')
+                .map((v) => (
+                  <option key={v.id_venda || v.id} value={v.id_venda || v.id}>
+                    #{v.id_venda || v.id} - {v.nome_comprador || v.nome_funcionario || 'Sistema'} - {formatarMoeda(v.valor_total || v.total || 0)}
+                  </option>
+                ))}
+            </select>
+          </div>
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setConfirmarCancelar(null)}
-              disabled={salvando}
+              onClick={() => setModalConfirmarPagamento(false)}
             >
-              Voltar
+              Cancelar
             </button>
             <button
               type="button"
-              className="btn btn-danger"
-              onClick={handleConfirmarCancelar}
-              disabled={salvando}
+              className="btn btn-success"
+              disabled={!vendaSelecionadaPagamento}
+              onClick={async () => {
+                await marcarComoPago(vendaSelecionadaPagamento)
+                setModalConfirmarPagamento(false)
+              }}
             >
-              {salvando ? 'Cancelando...' : 'Cancelar Venda'}
+              Confirmar Pagamento
             </button>
           </div>
         </Modal>
       )}
+
+      {modalConfirmarEntrega && (
+        <Modal
+          titulo="Confirmar Entrega"
+          show={modalConfirmarEntrega}
+          onClose={() => setModalConfirmarEntrega(false)}
+        >
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Selecione a venda</label>
+            <select
+              className="form-select"
+              value={vendaSelecionadaEntrega}
+              onChange={(e) => setVendaSelecionadaEntrega(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {vendas
+                .filter((v) => String(v.status_entrega || '').toLowerCase() !== 'entregue')
+                .map((v) => (
+                  <option key={v.id_venda || v.id} value={v.id_venda || v.id}>
+                    #{v.id_venda || v.id} - {v.nome_comprador || v.nome_funcionario || 'Sistema'} - {formatarMoeda(v.valor_total || v.total || 0)}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="d-flex justify-content-end gap-2 pt-3 border-top">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setModalConfirmarEntrega(false)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!vendaSelecionadaEntrega}
+              onClick={async () => {
+                await marcarComoEntregue(vendaSelecionadaEntrega)
+                setModalConfirmarEntrega(false)
+              }}
+            >
+              Confirmar Entrega
+            </button>
+          </div>
+        </Modal>
+      )}
+
     </div>
   )
 }

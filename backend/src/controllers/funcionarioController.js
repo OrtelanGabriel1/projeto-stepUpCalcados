@@ -45,6 +45,16 @@ class FuncionarioController {
       res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
     }
   }
+
+  async alternarAtivo(req, res) {
+    try {
+      const resultado = await funcionarioService.alternarAtivo(req.params.id);
+      res.status(200).json(resultado);
+    } catch (erro) {
+      res.status(erro.status || 500).json({ sucesso: false, mensagem: erro.mensagem || 'Erro interno' });
+    }
+  }
+
 }
 
 module.exports = new FuncionarioController();

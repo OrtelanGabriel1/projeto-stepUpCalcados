@@ -25,7 +25,8 @@ export default function Funcionarios() {
     nome: '',
     email: '',
     senha: '',
-    tipo_funcionario: 'vendedor'
+    tipo_funcionario: 'vendedor',
+    ativo: true
   });
   const [salvando, setSalvando] = useState(false);
   const [confirmarDelete, setConfirmarDelete] = useState(null);
@@ -75,7 +76,8 @@ export default function Funcionarios() {
       nome: '',
       email: '',
       senha: '',
-      tipo_funcionario: 'vendedor'
+      tipo_funcionario: 'vendedor',
+      ativo: true
     });
     setModalAberto(true);
   };
@@ -86,7 +88,10 @@ export default function Funcionarios() {
       nome: funcionario.nome || '',
       email: funcionario.email || '',
       senha: '',
-      tipo_funcionario: funcionario.tipo_funcionario || 'vendedor'
+      tipo_funcionario: funcionario.tipo_funcionario || 'vendedor',
+      ativo:
+        (funcionario.ativo === undefined ? true : Boolean(funcionario.ativo)) &&
+        String(funcionario.status || '').toLowerCase() !== 'inativo'
     });
     setModalAberto(true);
   };
@@ -98,7 +103,10 @@ export default function Funcionarios() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === 'ativo' ? value === 'true' : value
+    }));
   };
 
   const handleSalvar = async (e) => {
@@ -172,6 +180,25 @@ export default function Funcionarios() {
     }
   };
 
+  const handleToggleStatus = async (func) => {
+    const id = func.id_funcionario || func.id;
+    try {
+      await funcionarioService.acao(id, 'status', 'patch');
+      setToast({
+        mensagem: 'Status do funcionário atualizado com sucesso!',
+        tipo: 'success'
+      });
+      await carregarFuncionarios();
+    } catch (err) {
+      console.error('Erro ao alterar status:', err);
+      const msgErro =
+        err.response?.data?.mensagem ||
+        err.response?.data?.erro ||
+        'Erro ao alterar status do funcionário.';
+      setToast({ mensagem: msgErro, tipo: 'danger' });
+    }
+  };
+
   const renderBadgeTipo = (tipo) => {
     switch (tipo?.toLowerCase()) {
       case 'admin':
@@ -198,8 +225,9 @@ export default function Funcionarios() {
       ) return false;
     }
     if (filtros.status) {
-      const status = (func.status || 'Ativo').toLowerCase();
-      if (status !== filtros.status.toLowerCase()) return false;
+      const ativo = (func.ativo === undefined ? true : Boolean(func.ativo)) && String(func.status || '').toLowerCase() !== 'inativo';
+      const status = ativo ? 'Ativo' : 'Inativo';
+      if (status !== filtros.status) return false;
     }
     if (filtros.tipo && (func.tipo_funcionario || '').toLowerCase() !== filtros.tipo.toLowerCase()) return false;
     return true;
@@ -333,21 +361,25 @@ export default function Funcionarios() {
                       loggedUserId != null &&
                       String(idFunc) === String(loggedUserId);
 
+                    const ativo =
+                      (func.ativo === undefined ? true : Boolean(func.ativo)) &&
+                      String(func.status || '').toLowerCase() !== 'inativo';
+
                     return (
                       <tr key={idFunc || index}>
                         <td className="fw-semibold">{func.nome}</td>
                         <td>{func.email}</td>
                         <td>{renderBadgeTipo(func.tipo_funcionario)}</td>
                         <td>
-                          <span
-                            className={`badge ${
-                              String(func.status).toLowerCase() === 'inativo'
-                                ? 'bg-secondary'
-                                : 'bg-success'
-                            }`}
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${ativo ? 'btn-success' : 'btn-secondary'}`}
+                            onClick={() => handleToggleStatus(func)}
+                            disabled={eProprioUsuario}
+                            title="Alternar status ativo/inativo"
                           >
-                            {func.status || 'Ativo'}
-                          </span>
+                            {ativo ? 'Ativo' : 'Inativo'}
+                          </button>
                         </td>
                         <td className="text-end">
                           {eProprioUsuario ? (
@@ -442,6 +474,22 @@ export default function Funcionarios() {
               <option value="Vendedor">Vendedor</option>
               <option value="Gerente">Gerente</option>
               <option value="Estoquista">Estoquista</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="ativo" className="form-label">
+              Status
+            </label>
+            <select
+              className="form-select"
+              id="ativo"
+              name="ativo"
+              value={form.ativo ? 'true' : 'false'}
+              onChange={handleChange}
+            >
+              <option value="true">Ativo</option>
+              <option value="false">Inativo</option>
             </select>
           </div>
 

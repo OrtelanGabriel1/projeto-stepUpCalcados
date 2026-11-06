@@ -60,16 +60,16 @@ class FuncionarioService {
       throw { status: 404, mensagem: 'Funcionário não encontrado' };
     }
 
-    const { nome, email, senha, tipo_funcionario } = dados;
+    const { nome, email, senha, tipo_funcionario, ativo } = dados;
 
     if (!nome || !email || !tipo_funcionario) {
       throw {
         status: 400,
-        mensagem: 'Nome, email e tipo do funcionário são obrigatórios'
+        mensagem: 'Nome, email e tipo do funcionÃ¡rio sÃ£o obrigatÃ³rios'
       };
     }
 
-    // A senha é opcional na edição.
+    // A senha Ã© opcional na ediÃ§Ã£o.
     const dadosAtualizacao = {
       nome,
       email,
@@ -85,6 +85,10 @@ class FuncionarioService {
       }
 
       dadosAtualizacao.senha = await bcrypt.hash(senha, SALT_ROUNDS);
+    }
+
+    if (ativo !== undefined) {
+      dadosAtualizacao.ativo = Boolean(ativo);
     }
 
     await funcionarioRepository.atualizar(id, dadosAtualizacao);
@@ -112,6 +116,28 @@ class FuncionarioService {
     return {
       sucesso: true,
       mensagem: 'Funcionário desativado com sucesso'
+    };
+  }
+
+  async alternarAtivo(id) {
+    if (!id || isNaN(id)) {
+      throw { status: 400, mensagem: 'ID inválido' };
+    }
+
+    const existe = await funcionarioRepository.buscarPorId(id);
+
+    if (!existe) {
+      throw { status: 404, mensagem: 'Funcionário não encontrado' };
+    }
+
+    const novoAtivo = !Boolean(existe.ativo);
+
+    await funcionarioRepository.atualizarAtivo(id, novoAtivo);
+
+    return {
+      sucesso: true,
+      mensagem: novoAtivo ? 'Funcionário ativado com sucesso' : 'Funcionário desativado com sucesso',
+      dados: { ativo: novoAtivo }
     };
   }
 }

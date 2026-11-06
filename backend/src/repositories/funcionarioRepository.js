@@ -3,7 +3,7 @@ const pool = require('../config/database');
 class FuncionarioRepository {
   async buscarTodos() {
     const [rows] = await pool.query(
-      'SELECT id_funcionario, nome, email, tipo_funcionario, ativo FROM funcionario WHERE ativo = true'
+      'SELECT id_funcionario, nome, email, tipo_funcionario, ativo FROM funcionario'
     );
 
     return rows;
@@ -11,7 +11,7 @@ class FuncionarioRepository {
 
   async buscarPorId(id) {
     const [rows] = await pool.query(
-      'SELECT id_funcionario, nome, email, tipo_funcionario, ativo FROM funcionario WHERE id_funcionario = ? AND ativo = true',
+      'SELECT id_funcionario, nome, email, tipo_funcionario, ativo FROM funcionario WHERE id_funcionario = ?',
       [id]
     );
 
@@ -44,21 +44,26 @@ class FuncionarioRepository {
   }
 
   async atualizar(id, funcionario) {
-    const { nome, email, senha, tipo_funcionario } = funcionario;
+    const { nome, email, senha, tipo_funcionario, ativo } = funcionario;
 
-    // Atualiza a senha somente quando uma nova senha for informada.
+    const campos = ['nome = ?', 'email = ?', 'tipo_funcionario = ?'];
+    const valores = [nome, email, tipo_funcionario];
+
     if (senha) {
-      const [result] = await pool.query(
-        'UPDATE funcionario SET nome = ?, email = ?, senha = ?, tipo_funcionario = ? WHERE id_funcionario = ? AND ativo = true',
-        [nome, email, senha, tipo_funcionario, id]
-      );
-
-      return result.affectedRows > 0;
+      campos.push('senha = ?');
+      valores.push(senha);
     }
 
+    if (ativo !== undefined) {
+      campos.push('ativo = ?');
+      valores.push(ativo);
+    }
+
+    valores.push(id);
+
     const [result] = await pool.query(
-      'UPDATE funcionario SET nome = ?, email = ?, tipo_funcionario = ? WHERE id_funcionario = ? AND ativo = true',
-      [nome, email, tipo_funcionario, id]
+      `UPDATE funcionario SET ${campos.join(', ')} WHERE id_funcionario = ?`,
+      valores
     );
 
     return result.affectedRows > 0;
@@ -77,6 +82,15 @@ class FuncionarioRepository {
     const [result] = await pool.query(
       'UPDATE funcionario SET ativo = false WHERE id_funcionario = ?',
       [id]
+    );
+
+    return result.affectedRows > 0;
+  }
+
+  async atualizarAtivo(id, ativo) {
+    const [result] = await pool.query(
+      'UPDATE funcionario SET ativo = ? WHERE id_funcionario = ?',
+      [ativo, id]
     );
 
     return result.affectedRows > 0;

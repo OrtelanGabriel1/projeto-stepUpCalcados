@@ -2,7 +2,7 @@ const vendaRepository = require('../repositories/vendaRepository');
 const estoqueRepository = require('../repositories/estoqueRepository');
 const produtoRepository = require('../repositories/produtoRepository');
 
-const FORMAS_PAGAMENTO = ['dinheiro', 'pix', 'credito', 'debito'];
+const FORMAS_PAGAMENTO = ['dinheiro', 'pix', 'credito', 'debito', 'boleto'];
 
 class VendaService {
   async listar() {
@@ -23,7 +23,18 @@ class VendaService {
   }
 
   async registrar(dados) {
-    const { id_funcionario, forma_pagamento, itens } = dados;
+    const {
+      id_funcionario,
+      forma_pagamento,
+      itens,
+      nome_comprador,
+      cnpj,
+      endereco,
+      data_pedido,
+      data_entrega_prevista,
+      status_pagamento,
+      status_entrega,
+    } = dados;
 
     if (!forma_pagamento || !FORMAS_PAGAMENTO.includes(forma_pagamento)) {
       throw {
@@ -69,8 +80,19 @@ class VendaService {
     try {
       await connection.beginTransaction();
 
-      const id_venda = await vendaRepository.criar(
-        { id_funcionario, forma_pagamento, valor_total: total },
+       const id_venda = await vendaRepository.criar(
+        {
+          id_funcionario,
+          forma_pagamento,
+          valor_total: total,
+          nome_comprador,
+          cnpj,
+          endereco,
+          data_pedido,
+          data_entrega_prevista,
+          status_pagamento: status_pagamento || 'pago',
+          status_entrega: status_entrega || 'pendente',
+        },
         connection
       );
 
@@ -96,13 +118,20 @@ class VendaService {
     }
   }
 
-  async cancelar(id) {
+  async atualizarStatus(id, dados) {
     if (!id || isNaN(id)) {
       throw { status: 400, mensagem: 'ID inválido' };
     }
     const venda = await vendaRepository.buscarPorId(id);
     if (!venda) {
       throw { status: 404, mensagem: 'Venda não encontrada' };
+    }
+    await vendaRepository.atualizarStatus(id, dados);
+    return { sucesso: true, mensagem: 'Status atualizado com sucesso' };
+  }
+  async cancelar(id) {
+    if (!id || isNaN(id)) {
+      throw { status: 400, mensagem: 'Venda já concluída e paga. Cancelamento não permitido.' };
     }
 
     const itens = await vendaRepository.buscarItensDaVenda(id);

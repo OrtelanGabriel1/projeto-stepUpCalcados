@@ -9,6 +9,7 @@ router.get('/', funcionarioController.listar);
 router.get('/:id', funcionarioController.buscarPorId);
 router.post('/', funcionarioController.cadastrar);
 router.put('/:id', funcionarioController.atualizar);
+router.patch('/:id/status', funcionarioController.alternarAtivo);
 router.delete('/:id', funcionarioController.deletar);
 
 module.exports = router;
