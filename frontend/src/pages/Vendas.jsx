@@ -220,6 +220,10 @@ export default function Vendas() {
       setToast({ mensagem: 'Informe a data prevista de entrega.', tipo: 'danger' })
       return false
     }
+    if (form.data_entrega_prevista < form.data_pedido) {
+      setToast({ mensagem: 'A data prevista de entrega não pode ser anterior à data do pedido.', tipo: 'danger' })
+      return false
+    }
     return true
   }
 
@@ -615,6 +619,7 @@ export default function Vendas() {
                     type="date"
                     className="form-control"
                     value={form.data_entrega_prevista}
+                    min={form.data_pedido}
                     onChange={(e) => setForm((prev) => ({ ...prev, data_entrega_prevista: e.target.value }))}
                     required
                   />

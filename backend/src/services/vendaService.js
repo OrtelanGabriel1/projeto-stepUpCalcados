@@ -45,6 +45,12 @@ class VendaService {
     if (!itens || !Array.isArray(itens) || itens.length === 0) {
       throw { status: 400, mensagem: 'A venda deve ter pelo menos um item' };
     }
+    if (data_pedido && data_entrega_prevista && data_entrega_prevista < data_pedido) {
+      throw {
+        status: 400,
+        mensagem: 'A data prevista de entrega não pode ser anterior à data do pedido'
+      };
+    }
 
     // Valida cada item e calcula total
     let total = 0;
