@@ -326,3 +326,7 @@ body {
   background-color: #273449 !important;
   color: #e2e8f0 !important;
 }
+
+[data-bs-theme="dark"] .estoque-sem-quantidade {
+  color: #000 !important;
+}

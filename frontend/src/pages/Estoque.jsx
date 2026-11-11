@@ -401,7 +401,9 @@ export default function Estoque() {
                             <span className="badge bg-secondary">{generoProd}</span>
                           </td>
                           <td className="text-center">{renderBadgeQuantidade(item.quantidade)}</td>
-                          <td className="text-muted small">{formatarData(dataAtualizacao)}</td>
+                          <td className={`text-muted small${Number(item.quantidade) === 0 ? ' estoque-sem-quantidade' : ''}`}>
+                            {formatarData(dataAtualizacao)}
+                          </td>
                             <td className="text-center">
                               <button
                                 type="button"
