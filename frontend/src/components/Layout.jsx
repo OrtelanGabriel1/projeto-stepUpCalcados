@@ -1,14 +1,31 @@
 
 // frontend/src/components/Layout.jsx
 import React, { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const { funcionario, logout } = useAuth();
+  const location = useLocation();
+  const [menuAberto, setMenuAberto] = useState(false);
   const [temaEscuro, setTemaEscuro] = useState(
     () => localStorage.getItem("stepup-tema") === "escuro"
   );
+
+  useEffect(() => {
+    setMenuAberto(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuAberto) return undefined;
+
+    const fecharComEscape = (event) => {
+      if (event.key === "Escape") setMenuAberto(false);
+    };
+
+    document.addEventListener("keydown", fecharComEscape);
+    return () => document.removeEventListener("keydown", fecharComEscape);
+  }, [menuAberto]);
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -31,8 +48,34 @@ export default function Layout() {
 
 return (
     <div className="d-flex">
+      <header className="mobile-header">
+        <button
+          type="button"
+          className={`mobile-menu-toggle${menuAberto ? " menu-open" : ""}`}
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={menuAberto}
+          aria-controls="primary-navigation"
+          onClick={() => setMenuAberto((aberto) => !aberto)}
+        >
+          <span className="mobile-menu-icon" aria-hidden="true" />
+        </button>
+        <div className="d-flex align-items-center gap-2">
+          <img src="/logo_StepUp.png" alt="" />
+          <span className="fw-bold">StepUp</span>
+        </div>
+      </header>
+
+      {menuAberto && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Fechar menu"
+          onClick={() => setMenuAberto(false)}
+        />
+      )}
+
       {/* SIDEBAR */}
-      <div className="sidebar">
+      <div className={`sidebar${menuAberto ? " sidebar-open" : ""}`}>
         {/* Seção Superior */}
         <div style={{ padding: "1.5rem 1rem 1rem" }} className="d-flex align-items-center gap-2">
           <img src="/logo_StepUp.png" alt="Logo StepUp" style={{ width: 64, height: 64, objectFit: "contain", marginLeft: "-0.75rem" }} />
@@ -43,7 +86,13 @@ return (
         </div>
 
         {/* Nav */}
-        <nav className="flex-grow-1" style={{ padding: "0.5rem 0" }}>
+        <nav
+          id="primary-navigation"
+          aria-label="Navegação principal"
+          className="flex-grow-1"
+          style={{ padding: "0.5rem 0" }}
+          onClick={() => setMenuAberto(false)}
+        >
           <NavLink to="/" end className={getNavLinkClass}>
             <i className="bi bi-house-door"></i> Dashboard
           </NavLink>

@@ -9,12 +9,12 @@ const PageHeader = ({
 }) => {
   return (
     <>
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
+      <div className="page-header d-flex justify-content-between align-items-start mb-4">
+        <div className="page-header-title">
           <h2 className="mb-0 fw-bold">{titulo}</h2>
           {subtitulo && <p className="text-muted mb-0 mt-1">{subtitulo}</p>}
         </div>
-        <div>{children}</div>
+        <div className="page-header-actions">{children}</div>
       </div>
       {linha && <hr className="mt-0" />}
     </>
