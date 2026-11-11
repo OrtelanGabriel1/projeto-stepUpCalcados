@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
 import api from '../services/api'
 import { createResourceService } from '../services/resourceService'
 import { useAuth } from '../context/AuthContext'
@@ -34,9 +35,15 @@ const statusEntregaLabel = (status) => {
 
 export default function Vendas() {
   const { funcionario } = useAuth()
-  const podeRegistrarVenda = CARGOS_PODEM_VENDER.includes(
-    String(funcionario?.tipo_funcionario || '').toLowerCase()
-  )
+  const tipoFuncionario = String(
+    funcionario?.tipo || funcionario?.tipo_funcionario || ''
+  ).toLowerCase()
+
+  if (tipoFuncionario === 'estoquista') {
+    return <Navigate to="/" replace />
+  }
+
+  const podeRegistrarVenda = CARGOS_PODEM_VENDER.includes(tipoFuncionario)
 
   const [vendas, setVendas] = useState([])
   const [produtos, setProdutos] = useState([])

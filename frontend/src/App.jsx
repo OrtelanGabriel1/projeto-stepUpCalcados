@@ -28,6 +28,7 @@ export default function App() {
   ).toLowerCase();
 
   const ehGerente = tipoFuncionario === 'gerente';
+  const ehEstoquista = tipoFuncionario === 'estoquista';
 
   return (
     <>
@@ -40,7 +41,10 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/produtos" element={<Produtos />} />
             <Route path="/estoque" element={<Estoque />} />
-            <Route path="/vendas" element={<Vendas />} />
+            <Route
+              path="/vendas"
+              element={ehEstoquista ? <Navigate to="/" replace /> : <Vendas />}
+            />
             <Route path="/movimentacoes" element={<Movimentacoes />} />
             <Route path="/categorias" element={<Categorias />} />
 

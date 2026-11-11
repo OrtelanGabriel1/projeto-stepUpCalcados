@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { formatarMoeda } from '../utils';
 import Loading from '../components/Loading';
 import Toast from '../components/Toast';
@@ -8,6 +9,12 @@ import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 
 export default function Dashboard() {
+  const { funcionario } = useAuth();
+  const tipoFuncionario = String(
+    funcionario?.tipo || funcionario?.tipo_funcionario || ''
+  ).toLowerCase();
+  const podeVerVendas = tipoFuncionario !== 'estoquista';
+
   const [dados, setDados] = useState({
     totalEstoque: 0,
     vendasRealizadas: 0,
@@ -25,22 +32,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [podeVerVendas]);
 
   const carregarDados = async () => {
     setLoading(true);
     setErro(null);
 
     try {
-      const [resEstoque, resVenda, resBaixo] =
-        await Promise.all([
-          api.get('/estoque'),
-          api.get('/venda'),
-          api.get('/estoque/alerta/baixo')
-        ]);
-
-      // Extrai os registros, independentemente
-      // de a API retornar um array ou { dados: [...] }.
       const extrairLista = (resposta) => {
         const payload = resposta?.data;
 
@@ -55,31 +53,29 @@ export default function Dashboard() {
         return [];
       };
 
+      const [resEstoque, resBaixo, resVenda] = await Promise.all([
+        api.get('/estoque'),
+        api.get('/estoque/alerta/baixo'),
+        podeVerVendas ? api.get('/venda') : Promise.resolve(null)
+      ]);
+
       const estoque = extrairLista(resEstoque);
-      const vendas = extrairLista(resVenda);
       const produtosBaixo = extrairLista(resBaixo);
+      const vendas = podeVerVendas ? extrairLista(resVenda) : [];
 
       const totalEstoque = estoque.reduce(
-        (acc, item) =>
-          acc + (Number(item.quantidade) || 0),
+        (acc, item) => acc + (Number(item.quantidade) || 0),
         0
       );
-
-      const vendasRealizadas = vendas.length;
-
-      const faturamentoTotal = vendas.reduce(
-        (acc, item) =>
-          acc + (Number(item.valor_total) || 0),
-        0
-      );
-
-      const alertasEstoque = produtosBaixo.length;
 
       setDados({
         totalEstoque,
-        vendasRealizadas,
-        faturamentoTotal,
-        alertasEstoque,
+        vendasRealizadas: vendas.length,
+        faturamentoTotal: vendas.reduce(
+          (acc, item) => acc + (Number(item.valor_total) || 0),
+          0
+        ),
+        alertasEstoque: produtosBaixo.length,
         produtosEstoqueBaixo: produtosBaixo
       });
     } catch (err) {
@@ -149,39 +145,43 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Vendas realizadas */}
-        <div className="col-md-3 col-sm-6">
-          <div className="card card-stat h-100 shadow-sm border-0">
-            <div className="card-body d-flex align-items-center">
-              <i className="bi bi-cart3 fs-1 text-success me-3"></i>
-              <div>
-                <h3 className="mb-0 fw-bold">
-                  {dados.vendasRealizadas}
-                </h3>
-                <span className="text-muted small">
-                  Vendas Realizadas
-                </span>
+        {podeVerVendas && (
+          <>
+            {/* Vendas realizadas */}
+            <div className="col-md-3 col-sm-6">
+              <div className="card card-stat h-100 shadow-sm border-0">
+                <div className="card-body d-flex align-items-center">
+                  <i className="bi bi-cart3 fs-1 text-success me-3"></i>
+                  <div>
+                    <h3 className="mb-0 fw-bold">
+                      {dados.vendasRealizadas}
+                    </h3>
+                    <span className="text-muted small">
+                      Vendas Realizadas
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Faturamento total */}
-        <div className="col-md-3 col-sm-6">
-          <div className="card card-stat h-100 shadow-sm border-0">
-            <div className="card-body d-flex align-items-center">
-              <i className="bi bi-currency-dollar fs-1 text-warning me-3"></i>
-              <div>
-                <h3 className="mb-0 fw-bold">
-                  {formatarMoeda(dados.faturamentoTotal)}
-                </h3>
-                <span className="text-muted small">
-                  Faturamento Total
-                </span>
+            {/* Faturamento total */}
+            <div className="col-md-3 col-sm-6">
+              <div className="card card-stat h-100 shadow-sm border-0">
+                <div className="card-body d-flex align-items-center">
+                  <i className="bi bi-currency-dollar fs-1 text-warning me-3"></i>
+                  <div>
+                    <h3 className="mb-0 fw-bold">
+                      {formatarMoeda(dados.faturamentoTotal)}
+                    </h3>
+                    <span className="text-muted small">
+                      Faturamento Total
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Alertas de estoque */}
         <div className="col-md-3 col-sm-6">

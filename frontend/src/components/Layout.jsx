@@ -24,6 +24,7 @@ export default function Layout() {
   ).toLowerCase();
 
   const ehGerente = tipoFuncionario === "gerente";
+  const ehEstoquista = tipoFuncionario === "estoquista";
 
   const getNavLinkClass = ({ isActive }) =>
     `nav-link${isActive ? " active" : ""}`;
@@ -55,9 +56,11 @@ return (
             <i className="bi bi-archive"></i> Estoque
           </NavLink>
 
-          <NavLink to="/vendas" className={getNavLinkClass}>
-            <i className="bi bi-cart3"></i> Vendas
-          </NavLink>
+          {!ehEstoquista && (
+            <NavLink to="/vendas" className={getNavLinkClass}>
+              <i className="bi bi-cart3"></i> Vendas
+            </NavLink>
+          )}
 
           <NavLink to="/movimentacoes" className={getNavLinkClass}>
             <i className="bi bi-arrow-left-right"></i> Movimentações
