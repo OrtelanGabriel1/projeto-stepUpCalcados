@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import api from '../services/api'
 import { createResourceService } from '../services/resourceService'
 import { useAuth } from '../context/AuthContext'
-import { formatarMoeda, formatarData } from '../utils'
+import { formatarMoeda, formatarData, formatarCpfCnpj, validarCpfCnpj } from '../utils'
 import Loading from '../components/Loading'
 import Toast from '../components/Toast'
 import Modal from '../components/Modal'
@@ -13,15 +13,6 @@ const vendaService = createResourceService('venda')
 const produtoService = createResourceService('produto')
 
 const CARGOS_PODEM_VENDER = ['vendedor', 'gerente']
-
-const formatarCnpj = (valor) => {
-  const digits = String(valor || '').replace(/\D/g, '').slice(0, 14)
-  if (digits.length <= 2) return digits
-  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`
-  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`
-  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
-}
 
 const statusPagamentoLabel = (status) =>
   String(status || '').toLowerCase() === 'pago' ? 'Concluído' : 'Pendente'
@@ -204,8 +195,8 @@ export default function Vendas() {
       setToast({ mensagem: 'Informe o nome do comprador.', tipo: 'danger' })
       return false
     }
-    if (!form.cnpj.trim() || form.cnpj.replace(/\D/g, '').length < 14) {
-      setToast({ mensagem: 'Informe um CNPJ válido.', tipo: 'danger' })
+    if (!validarCpfCnpj(form.cnpj)) {
+      setToast({ mensagem: 'Informe um CPF ou CNPJ válido.', tipo: 'danger' })
       return false
     }
     if (!form.endereco.trim()) {
@@ -582,13 +573,15 @@ export default function Vendas() {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-semibold">CNPJ *</label>
+                <label className="form-label fw-semibold">CPF ou CNPJ *</label>
                 <input
                   type="text"
                   className="form-control"
                   value={form.cnpj}
-                  onChange={(e) => setForm((prev) => ({ ...prev, cnpj: formatarCnpj(e.target.value) }))}
-                  placeholder="00.000.000/0000-00"
+                  onChange={(e) => setForm((prev) => ({ ...prev, cnpj: formatarCpfCnpj(e.target.value) }))}
+                  placeholder="CPF ou CNPJ"
+                  inputMode="numeric"
+                  maxLength={18}
                   required
                 />
               </div>

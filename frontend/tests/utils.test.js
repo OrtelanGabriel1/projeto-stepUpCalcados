@@ -1,7 +1,9 @@
 import {
   calcularVariacaoPercentual,
   formatarData,
-  formatarMoeda
+  formatarMoeda,
+  formatarCpfCnpj,
+  validarCpfCnpj
 } from '../src/utils';
 
 describe('formatarMoeda', () => {
@@ -24,6 +26,21 @@ describe('formatarData', () => {
   it('retorna um traço para datas ausentes ou inválidas', () => {
     expect(formatarData('')).toBe('—');
     expect(formatarData('data inválida')).toBe('—');
+  });
+});
+
+describe('CPF e CNPJ', () => {
+  it('formata CPF ou CNPJ conforme o número de dígitos', () => {
+    expect(formatarCpfCnpj('52998224725')).toBe('529.982.247-25');
+    expect(formatarCpfCnpj('11222333000181')).toBe('11.222.333/0001-81');
+  });
+
+  it('valida os dígitos verificadores de CPF e CNPJ', () => {
+    expect(validarCpfCnpj('529.982.247-25')).toBe(true);
+    expect(validarCpfCnpj('11.222.333/0001-81')).toBe(true);
+    expect(validarCpfCnpj('529.982.247-24')).toBe(false);
+    expect(validarCpfCnpj('11.222.333/0001-80')).toBe(false);
+    expect(validarCpfCnpj('111.111.111-11')).toBe(false);
   });
 });
 

@@ -39,6 +39,59 @@ export function formatarData(dataString) {
   return `${obj.day}/${obj.month}/${obj.year} às ${obj.hour}:${obj.minute}`;
 }
 
+export function formatarCpfCnpj(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 14);
+
+  if (digitos.length <= 11) {
+    if (digitos.length <= 3) return digitos;
+    if (digitos.length <= 6) return `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+    if (digitos.length <= 9) return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+    return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+  }
+
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 5) return `${digitos.slice(0, 2)}.${digitos.slice(2)}`;
+  if (digitos.length <= 8) return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5)}`;
+  if (digitos.length <= 12) return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8)}`;
+  return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12)}`;
+}
+
+export function validarCpfCnpj(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '');
+
+  if (/^(\d)\1+$/.test(digitos)) return false;
+
+  if (digitos.length === 11) {
+    const calcularDigito = (base, pesoInicial) => {
+      const soma = base
+        .split('')
+        .reduce((total, digito, indice) => total + Number(digito) * (pesoInicial - indice), 0);
+      const resto = soma % 11;
+      return resto < 2 ? 0 : 11 - resto;
+    };
+
+    const primeiro = calcularDigito(digitos.slice(0, 9), 10);
+    const segundo = calcularDigito(digitos.slice(0, 9) + primeiro, 11);
+    return digitos.endsWith(`${primeiro}${segundo}`);
+  }
+
+  if (digitos.length === 14) {
+    const calcularDigito = (base, pesos) => {
+      const soma = base
+        .split('')
+        .reduce((total, digito, indice) => total + Number(digito) * pesos[indice], 0);
+      const resto = soma % 11;
+      return resto < 2 ? 0 : 11 - resto;
+    };
+
+    const primeiro = calcularDigito(digitos.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const segundo = calcularDigito(digitos.slice(0, 12) + primeiro, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    return digitos.endsWith(`${primeiro}${segundo}`);
+  }
+
+  return false;
+}
+
 /**
  * Calcula a variação percentual entre dois valores.
  * Exemplo: (100, 120) -> "+20,00%", (100, 80) -> "-20,00%"
