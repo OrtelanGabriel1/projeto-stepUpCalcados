@@ -161,6 +161,10 @@ export default function Produtos() {
       exibirToast('O preço de venda deve ser maior que zero.', 'danger');
       return false;
     }
+    if (pCusto < pVenda) {
+      exibirToast('O preço de produção não pode ser menor que o preço de venda.', 'danger');
+      return false;
+    }
 
     return true;
   };
