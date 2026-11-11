@@ -19,8 +19,6 @@ export default function Categorias() {
   const [form, setForm] = useState({ nome: "", descricao: "" });
   const [salvando, setSalvando] = useState(false);
 
-  const [confirmarDelete, setConfirmarDelete] = useState(null);
-
   useEffect(() => {
     carregarCategorias();
   }, []);
@@ -91,28 +89,6 @@ export default function Categorias() {
     }
   };
 
-  const handleDeletar = async () => {
-    if (!confirmarDelete) return;
-
-    try {
-      const idDaCategoria = confirmarDelete.id || confirmarDelete.id_categoria;
-      await categoriaService.deletar(idDaCategoria);
-      setToast({
-        mensagem: "Categoria excluída com sucesso!",
-        tipo: "success",
-      });
-      setConfirmarDelete(null);
-      carregarCategorias();
-    } catch (err) {
-      setToast({
-        mensagem:
-          err.response?.data?.mensagem ||
-          "Erro ao excluir categoria (pode estar vinculada a outros registros)",
-        tipo: "danger",
-      });
-    }
-  };
-
   if (loading) {
     return <Loading />;
   }
@@ -164,14 +140,6 @@ export default function Categorias() {
                           title="Editar categoria"
                         >
                           Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => setConfirmarDelete(item)}
-                          title="Excluir categoria"
-                        >
-                          Excluir
                         </button>
                       </td>
                     </tr>
@@ -238,20 +206,6 @@ export default function Categorias() {
               </button>
             </div>
           </form>
-        </Modal>
-      )}
-
-      {confirmarDelete && (
-        <Modal
-          titulo="Confirmar Exclusão"
-          textoBotao="Excluir"
-          tipoBotao="danger"
-          onConfirm={handleDeletar}
-          onClose={() => setConfirmarDelete(null)}
-        >
-          <p className="mb-0">
-            Tem certeza que deseja excluir a categoria '{confirmarDelete.nome}'?
-          </p>
         </Modal>
       )}
     </div>

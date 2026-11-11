@@ -58,7 +58,6 @@ export default function Vendas() {
   const [vendaSelecionadaEntrega, setVendaSelecionadaEntrega] = useState('')
   const [etapa, setEtapa] = useState(1)
   const [modalDetalhes, setModalDetalhes] = useState(null)
-  const [confirmarCancelar, setConfirmarCancelar] = useState(null)
   const [salvando, setSalvando] = useState(false)
 
   const [form, setForm] = useState({
@@ -303,27 +302,6 @@ export default function Vendas() {
     }
   }
 
-  const handleConfirmarCancelar = async (vendaParam) => {
-    const vendaAlvo = vendaParam || confirmarCancelar
-    if (!vendaAlvo) return
-    const id = vendaAlvo.id_venda || vendaAlvo.id
-    setSalvando(true)
-
-    try {
-      const res = await api.patch(`/venda/${id}/cancelar`)
-      const msgSucesso = res.data?.mensagem || res.mensagem || 'Venda cancelada com sucesso!'
-
-      setToast({ mensagem: msgSucesso, tipo: 'success' })
-      setConfirmarCancelar(null)
-      carregarDados()
-    } catch (err) {
-      const msgErro = err.response?.data?.mensagem || err.message || 'Erro ao cancelar venda.'
-      setToast({ mensagem: msgErro, tipo: 'danger' })
-    } finally {
-      setSalvando(false)
-    }
-  }
-
   const renderFormaPagamento = (forma) => {
     const formaLower = forma?.toLowerCase() || ''
     switch (formaLower) {
@@ -460,21 +438,6 @@ export default function Vendas() {
                           >
                             Detalhes
                           </button>
-                          {!cancelada && !paga && (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => {
-                                if (window.confirm('Cancelar esta venda? O estoque será revertido.')) {
-                                  handleConfirmarCancelar(venda)
-                                }
-                              }}
-                              title="Cancelar venda"
-                              disabled={salvando}
-                            >
-                              Cancelar
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
