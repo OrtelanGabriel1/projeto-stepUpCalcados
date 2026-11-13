@@ -33,8 +33,8 @@ class ProdutoService {
     if (preco_venda <= 0 || preco_custo <= 0) {
       throw { status: 400, mensagem: 'Preço deve ser um número positivo' };
     }
-    if (Number(preco_custo) < Number(preco_venda)) {
-      throw { status: 400, mensagem: 'O preço de produção não pode ser menor que o preço de venda' };
+    if (Number(preco_custo) >= Number(preco_venda)) {
+      throw { status: 400, mensagem: 'O preço de custo deve ser menor que o preço de venda' };
     }
 
     const novoProduto = { nome, descricao, preco_venda, preco_custo, tamanho, cor, genero, id_categoria };
@@ -59,8 +59,8 @@ class ProdutoService {
     const precoCusto = dados.preco_custo !== undefined
       ? Number(dados.preco_custo)
       : Number(existe.preco_custo);
-    if (precoCusto < precoVenda) {
-      throw { status: 400, mensagem: 'O preço de produção não pode ser menor que o preço de venda' };
+    if (precoCusto >= precoVenda) {
+      throw { status: 400, mensagem: 'O preço de custo deve ser menor que o preço de venda' };
     }
 
     const { preco_venda } = dados;
